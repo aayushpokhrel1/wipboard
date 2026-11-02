@@ -1,7 +1,8 @@
 # Dashboard redesign: make it a proper dashboard
 
 **Date:** 2026-11-01
-**Status:** approved, not yet built
+**Status:** approved, not yet built. One attempt on 2026-11-01 was rejected in full; read
+"What was tried" below before starting another.
 **Scope:** `worker/src/render.ts` only. The CLI and its terminal table are untouched.
 
 ## Problem
@@ -114,6 +115,44 @@ zigzag. Three ways to handle it:
 Recommended: option 1, two columns at 40rem and three at a wider stop. It keeps the ranking
 intact without adding an element to the card. Not binding; the world chosen in `new-work`
 may argue for another.
+
+## What was tried on 2026-11-01, and why it was rejected
+
+The first attempt at this spec produced four rounds of options and the author rejected all of
+them. That is recorded here because the failure was in how the options were generated, and the
+next attempt will repeat it unless it is read.
+
+Each round was a set of built, served prototypes rather than descriptions, which was right.
+What was wrong is what they contained. Round one varied the skin (a timetable, a deck log, a
+gate board) over the same structure: one row per project, nineteen deep. The author's verdict
+was "all the same list but with simple different css". Round two varied the composition and
+the author liked one of them but said it had "no soul" and the colours were wrong. Round three
+re-rolled the visual world inside that composition. Round four rolled structure again and
+offered a radar dial, a triage split, and a wall of equal tiles.
+
+The brief asked for a dashboard. Every round answered with nineteen projects arranged
+differently. Four rounds of that is a failure to hear the brief, not a failure of the options
+to be interesting enough, and no further re-roll of worlds or structures would have fixed it,
+because the thing being re-rolled was not the thing that was wrong. A dashboard is not a
+prettier enumeration of the rows; it is a page that answers a question before you read any
+row. The next attempt should start from what the page should tell you in four seconds, and let
+the treatment of the nineteen projects fall out of that, rather than starting from the
+nineteen and arranging them.
+
+### Two data facts the attempt established
+
+Both are properties of the real board, and both constrain any design:
+
+- **`stage_set_at` is identical across every project** (all `2026-10-02` at the time of
+  writing, since that is when the stages were first set). "Time in stage" is therefore not a
+  usable visual axis: any plot against it degenerates to a flat line. A design that wants a
+  second dimension has to find it elsewhere.
+- **6 of 19 projects are suspect.** The alarm treatment lands on roughly a third of the board,
+  not on one row. Any world whose alarm is a thin red edge on an otherwise calm page is
+  designing for a board that does not exist.
+
+Nothing from the attempt was committed. The prototypes were scratchpad files and the repo was
+never touched.
 
 ## Done looks like
 
