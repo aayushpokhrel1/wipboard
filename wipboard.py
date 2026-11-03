@@ -234,6 +234,11 @@ def git_info(repo: Path) -> dict | None:
 NEXT_MAX_ITEMS = 4
 NEXT_MAX_CHARS = 160
 
+# The terminal's NEXT column shows the first next item only when it fits on one
+# scannable line. A longer one falls back to the author's own note: a truncated
+# paragraph is worse than a curated sentence.
+NEXT_CELL_MAX_CHARS = 60
+
 # A list marker at the start of a line: -, *, +, or 1. / 1) numbering.
 _LIST_MARKER = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
 _HEADING = re.compile(r"^(#{1,6})\s")
@@ -607,8 +612,11 @@ def human_age(then: datetime | None, now: datetime) -> str:
 
 
 def _note_cell(row: Row) -> str:
+    """The flags, then what is next: the first next item when it fits, else the note."""
     parts = list(row.flags)
-    if row.note:
+    if row.next_items and len(row.next_items[0]) <= NEXT_CELL_MAX_CHARS:
+        parts.append(row.next_items[0])
+    elif row.note:
         parts.append(row.note)
     return "  ".join(parts)
 
@@ -616,7 +624,7 @@ def _note_cell(row: Row) -> str:
 def render_table(rows: list[Row], now: datetime | None = None) -> str:
     """Four left-aligned columns, widths from the content, two spaces between."""
     now = now or utc_now()
-    headers = ("PROJECT", "STAGE", "TOUCHED", "NOTE")
+    headers = ("PROJECT", "STAGE", "TOUCHED", "NEXT")
     body = [
         (row.name, row.stage, human_age(row.last_commit, now), _note_cell(row))
         for row in rows
@@ -637,7 +645,7 @@ def render_md(rows: list[Row], now: datetime | None = None) -> str:
     lines = [
         "# Projects",
         "",
-        "| PROJECT | STAGE | TOUCHED | NOTE |",
+        "| PROJECT | STAGE | TOUCHED | NEXT |",
         "| --- | --- | --- | --- |",
     ]
     for row in rows:
@@ -667,6 +675,89 @@ def _discover(root: Path) -> list[str]:
 def cmd_show(store: dict) -> int:
     rows = build_rows(store, utc_now())
     print(render_table(rows))
+    return 0
+
+
+# How the NEXT section names where its items were read from.
+NEXT_SOURCE_LABELS = {
+    "handover": "from HANDOVER.md",
+    "todo": "from the TODO file",
+    "plan": "from the newest plan",
+}
+
+
+def render_project(row: Row, now: datetime) -> str:
+    """One project in full, as plain text.
+
+    Pure: no I/O and no clock read, so a test can pin `now`. No colour and no
+    box drawing, because this prints on every shell session.
+    """
+    sections: list[list[str]] = []
+
+    head = [f"{row.name}  {row.stage}  {human_age(row.last_commit, now)}"]
+    where = row.branch if row.has_git else "no git"
+    second = "  ".join(part for part in (where, "  ".join(row.flags)) if part)
+    if second:
+        head.append(second)
+    sections.append(head)
+
+    if row.note:
+        sections.append([row.note])
+
+    # A heading and its items are ONE section. Appending the heading and then
+    # extending with the items pushes bare strings into a list of lists, and
+    # joining a string joins its characters, one per line.
+    if row.next_items:
+        label = NEXT_SOURCE_LABELS.get(row.next_source, "")
+        sections.append(
+            [
+                f"NEXT  ({label})" if label else "NEXT",
+                *(f"  - {item}" for item in row.next_items),
+            ]
+        )
+
+    if row.recent:
+        ages = [human_age(entry["at"], now) for entry in row.recent]
+        width = max(len(age) for age in ages)
+        sections.append(
+            [
+                "RECENT",
+                *(
+                    f"  {age.ljust(width)}  {entry['subject']}"
+                    for age, entry in zip(ages, row.recent)
+                ),
+            ]
+        )
+
+    if row.uncommitted:
+        block = [
+            f"UNCOMMITTED  ({row.changed})",
+            *(f"  {path}" for path in row.uncommitted),
+        ]
+        # changed counts every porcelain line; uncommitted is capped at 8.
+        if row.changed > len(row.uncommitted):
+            block.append(f"  and {row.changed - len(row.uncommitted)} more")
+        sections.append(block)
+
+    return "\n\n".join("\n".join(section) for section in sections)
+
+
+def cmd_show_project(store: dict, name: str) -> int:
+    """Print one project in full. Lookup, printing and the exit code only."""
+    now = utc_now()
+    rows = build_rows(store, now)
+    # An exact match wins over a case-insensitive one, so "Alpha" never resolves
+    # to "alpha" when both exist.
+    match = next((row for row in rows if row.name == name), None)
+    if match is None:
+        match = next((row for row in rows if row.name.lower() == name.lower()), None)
+    if match is None:
+        print(f"No project called {name}.", file=sys.stderr)
+        near = [row.name for row in rows if name.lower() in row.name.lower()][:5]
+        if near:
+            print(f"Did you mean: {', '.join(near)}", file=sys.stderr)
+        return 1
+    print(render_project(match, now))
     return 0
 
 
@@ -830,7 +921,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="wipboard", description=__doc__)
     sub = parser.add_subparsers(dest="command")
 
-    sub.add_parser("show", help="print the board, stalest first")
+    show = sub.add_parser("show", help="print the board, stalest first")
+    show.add_argument("project", nargs="?", default=None)
 
     init = sub.add_parser("init", help="register a root and discover its folders")
     init.add_argument("path", nargs="?", default=".")
@@ -857,6 +949,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         store = load_store(path)
         if command == "show":
+            # No argument at all means the command defaulted, so there is no
+            # project attribute to read.
+            project = getattr(args, "project", None)
+            if project:
+                return cmd_show_project(store, project)
             if not path.exists():
                 print("No projects yet. Run: wipboard init <path>")
                 return 0

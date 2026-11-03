@@ -623,6 +623,143 @@ def test_handover_stays_a_current_state_note() -> None:
     assert not dated, f"dated headings belong in git log, not the handover: {dated}"
 
 
+def _cell_row(**kwargs) -> wipboard.Row:
+    """A row with the fields the NEXT column reads, overridable per test."""
+    fields = {
+        "name": "alpha",
+        "stage": "building",
+        "note": "the curated note",
+        "last_commit": datetime(2026, 10, 20, 12, 0),
+        "flags": ["!"],
+        "has_git": True,
+        "branch": "main",
+    }
+    fields.update(kwargs)
+    return wipboard.Row(**fields)
+
+
+def test_next_column_shows_the_first_next_item_when_it_fits() -> None:
+    """Catches the column still printing the note when a next item is in hand."""
+    row = _cell_row(next_items=["ship the thing", "then the other"], next_source="handover")
+
+    assert wipboard._note_cell(row) == "!  ship the thing"
+
+
+def test_next_column_falls_back_to_the_note_when_the_item_is_too_long() -> None:
+    """Catches a truncated paragraph: past the cap the author's note wins."""
+    long_item = "x" * (wipboard.NEXT_CELL_MAX_CHARS + 1)
+    row = _cell_row(next_items=[long_item], next_source="handover")
+
+    assert wipboard._note_cell(row) == "!  the curated note"
+
+
+def test_next_column_falls_back_to_the_note_with_no_next_items() -> None:
+    """Catches an empty next list blanking the column."""
+    row = _cell_row(next_items=[], next_source="")
+
+    assert wipboard._note_cell(row) == "!  the curated note"
+
+
+def test_next_column_keeps_the_flags_first_in_every_case() -> None:
+    """Catches the flags being dropped or moved behind the text."""
+    fits = _cell_row(next_items=["ship it"], next_source="handover")
+    too_long = _cell_row(next_items=["x" * 61], next_source="handover")
+    none = _cell_row(next_items=[], next_source="")
+    bare = _cell_row(note="", next_items=[], next_source="")
+
+    for row in (fits, too_long, none):
+        assert wipboard._note_cell(row).startswith("!  ")
+    # No next item and no note leaves just the flags, as before.
+    assert wipboard._note_cell(bare) == "!"
+
+
+def test_both_views_head_the_last_column_next() -> None:
+    """Catches the table and the markdown disagreeing about the column."""
+    rows = [_cell_row()]
+
+    assert wipboard.render_table(rows, datetime(2026, 10, 20, 14, 0)).splitlines()[0].split()[-1] == "NEXT"
+    assert "| PROJECT | STAGE | TOUCHED | NEXT |" in wipboard.render_md(rows).splitlines()
+
+
+def test_render_project_shows_every_section() -> None:
+    """Catches a section going missing from the single-project view."""
+    now = datetime(2026, 10, 20, 14, 0)
+    row = _cell_row(
+        note="CLI and tests done, not published",
+        next_items=["Dashboard redesign", "Register the push task"],
+        next_source="handover",
+        recent=[
+            {"at": now - timedelta(hours=2), "subject": "feat(worker): split the sheet"},
+            {"at": now - timedelta(hours=3), "subject": "feat(cli): read what is next"},
+        ],
+        uncommitted=["docs/OPERATIONS.md", "wipboard.py"],
+        changed=2,
+    )
+
+    out = wipboard.render_project(row, now)
+
+    assert out.splitlines()[0] == "alpha  building  2h"
+    assert "main  !" in out
+    assert "CLI and tests done, not published" in out
+    assert "NEXT  (from HANDOVER.md)" in out
+    assert "  - Dashboard redesign" in out
+    assert "  - Register the push task" in out
+    assert "RECENT" in out
+    assert "  2h  feat(worker): split the sheet" in out
+    assert "  3h  feat(cli): read what is next" in out
+    assert "UNCOMMITTED  (2)" in out
+    assert "  docs/OPERATIONS.md" in out
+    assert "  wipboard.py" in out
+
+
+def test_render_project_omits_empty_sections() -> None:
+    """Catches a stray heading printed over nothing."""
+    now = datetime(2026, 10, 20, 14, 0)
+    row = _cell_row(note="", next_items=[], next_source="", recent=[], uncommitted=[], changed=0)
+
+    out = wipboard.render_project(row, now)
+
+    assert "NEXT" not in out
+    assert "RECENT" not in out
+    assert "UNCOMMITTED" not in out
+    assert out.splitlines() == ["alpha  building  2h", "main  !"]
+
+
+def test_render_project_counts_the_paths_it_did_not_list() -> None:
+    """Catches the cap of 8 paths hiding the true total."""
+    now = datetime(2026, 10, 20, 14, 0)
+    row = _cell_row(uncommitted=[f"file{i}.py" for i in range(8)], changed=11)
+
+    out = wipboard.render_project(row, now)
+
+    assert "UNCOMMITTED  (11)" in out
+    assert out.splitlines()[-1] == "  and 3 more"
+
+
+def test_show_project_returns_one_for_an_unknown_name(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Catches an unknown name printing an empty block and exiting 0."""
+    store_file = tmp_path / "projects.json"
+    monkeypatch.setattr(wipboard, "store_path", lambda: store_file)
+    store_file.write_text('{"roots": [], "projects": {"Alpha": {"stage": "idea"}}}')
+
+    assert wipboard.main(["show", "Nope"]) == 1
+    assert "No project called Nope." in capsys.readouterr().err
+
+
+def test_show_project_matches_a_name_case_insensitively(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Catches a typed name in the wrong case failing to find the project."""
+    store_file = tmp_path / "projects.json"
+    monkeypatch.setattr(wipboard, "store_path", lambda: store_file)
+    store_file.write_text('{"roots": [], "projects": {"Alpha": {"stage": "building"}}}')
+
+    assert wipboard.main(["show", "alpha"]) == 0
+    assert capsys.readouterr().out.splitlines()[0].startswith("Alpha  building")
+
+
 def test_uncommitted_keeps_the_whole_first_path(tmp_path: Path) -> None:
     """Catches the fixed line[3:] slice eating a character off the first path.
 
