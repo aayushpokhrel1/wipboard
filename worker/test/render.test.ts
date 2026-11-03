@@ -83,18 +83,22 @@ describe("renderBoard", () => {
     expect(html).not.toMatch(/-\d+[mhdy]/);
   });
 
-  it("marks a snapshot over 24h old as probably offline", () => {
+  // The stale note says only that nothing has been pushed. It claimed the
+  // machine had "probably been off" until 2026-11-02, by which point it had
+  // fired twice and been wrong both times.
+  it("marks a snapshot over 24h old as stale, without guessing why", () => {
     const html = renderBoard(board({ generated_at: "2026-10-19T11:00:00" }), NOW);
     expect(html).toContain("1d ago");
-    expect(html).toContain("probably been off");
+    expect(html).toContain("Nothing has been pushed since");
     expect(html).toContain("stale");
+    expect(html).not.toContain("probably been off");
   });
 
   it("marks a snapshot over an hour old as amber", () => {
     const html = renderBoard(board({ generated_at: "2026-10-20T10:00:00" }), NOW);
     expect(html).toContain("2h ago");
     expect(html).toContain("warn");
-    expect(html).not.toContain("probably been off");
+    expect(html).not.toContain("Nothing has been pushed since");
   });
 
   it("keeps payload order rather than re-sorting", () => {
@@ -122,9 +126,12 @@ describe("renderBoard", () => {
       }),
       NOW,
     );
-    expect(html).toContain('class="row suspect"');
-    expect(html).toContain("building 1");
-    expect(html).toContain("parked 1");
+    // Three channels, only one of which is colour: the wax ring the class
+    // draws, the struck frame number, and the literal flag.
+    expect(html).toContain("suspect");
+    expect(html).toContain('class="flag">!<');
+    expect(html).toContain("<span>building</span> <b>1</b>");
+    expect(html).toContain("<span>parked</span> <b>1</b>");
   });
 
   it("shows branch, subject, changed count and time in stage", () => {
