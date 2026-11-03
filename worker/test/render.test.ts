@@ -112,8 +112,13 @@ describe("renderBoard", () => {
       }),
       NOW,
     );
-    expect(html.indexOf("zeta")).toBeLessThan(html.indexOf("alpha"));
-    expect(html.indexOf("alpha")).toBeLessThan(html.indexOf("mid"));
+    // Search the sheet, not the whole document. Searching raw substrings over
+    // the page meant any word appearing in the stylesheet above could fail
+    // this: the comment "a mid grey" broke it on 2026-11-02, which is a false
+    // failure about a real rule and the worst kind to debug.
+    const sheet = html.slice(html.indexOf('<ol class="sheet"'));
+    expect(sheet.indexOf("zeta")).toBeLessThan(sheet.indexOf("alpha"));
+    expect(sheet.indexOf("alpha")).toBeLessThan(sheet.indexOf("mid"));
   });
 
   it("gives a '!' row visual emphasis and counts stages", () => {

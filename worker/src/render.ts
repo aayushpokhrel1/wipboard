@@ -212,20 +212,24 @@ const STYLE = `
   color-scheme: light dark;
   /* Unexposed paper. The grid gap is the rebate, so the page itself shows
      through between the frames and no element has to draw one. */
-  --paper: #f4f0e6;
-  --ink: #1c1a17;
-  --silver: #6f695d;
+  --paper: #eef1f4;
+  --ink: #11151a;
+  --silver: #5d6671;
   /* The one saturated ink on the page. Grease pencil, and nothing else.
      Anything here that is not a condition the data actually holds is grey. */
-  --wax: #b8312a;
-  --rebate: #d9d2c1;
-  /* The density ramp: six steps away from the paper, fresh to stale. */
-  --d0: #eae3d4;
-  --d1: #ded6c4;
-  --d2: #cec4ae;
-  --d3: #bbb09a;
-  --d4: #a99d87;
-  --d5: #978b76;
+  --wax: #c62f22;
+  --rebate: #ccd3da;
+  /* The density ramp: six steps away from the paper, fresh to stale.
+     The light scheme's dense end stops at a mid grey rather than going as dark
+     as the dark scheme's goes light. It is capped by the wax, not by taste:
+     the ring and the struck number are non-text marks and need 3:1 against the
+     ground they are drawn on, and a denser d5 than this fails that. */
+  --d0: #e4e8ed;
+  --d1: #dae0e7;
+  --d2: #cdd5de;
+  --d3: #bfc8d3;
+  --d4: #b2bcc8;
+  --d5: #a6b0bb;
   --develop: 520ms;
 }
 * { box-sizing: border-box; }
@@ -356,7 +360,12 @@ body {
   font-size: .68rem;
   letter-spacing: .02em;
 }
-.flag { font-weight: 700; color: var(--wax); }
+/* Flags are ink at full weight, not wax. Wax text inside a frame has to clear
+   contrast against all six density steps and does not at the dense end, and
+   the alarm is already carried by the ring, the struck number and the word
+   itself. The wax stays where its ground is known: the ring, the strike, and
+   the stale stamp on the paper. */
+.flag { font-weight: 700; }
 
 /* The grease pencil. A suspect frame is marked three ways at once, only one of
    which is colour: a drawn wax ring, the frame number struck through, and the
@@ -374,7 +383,6 @@ body {
   pointer-events: none;
 }
 .frame.suspect .num {
-  color: var(--wax);
   text-decoration: line-through 2px var(--wax);
 }
 
@@ -423,17 +431,17 @@ code {
    from the ground, so the sheet's shape reads identically in both. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #100f0c;
-    --ink: #ece6d9;
-    --silver: #968d7b;
-    --wax: #ff6a5c;
-    --rebate: #35312a;
-    --d0: #16140f;
-    --d1: #1f1c15;
-    --d2: #29241b;
-    --d3: #342e23;
-    --d4: #3f382a;
-    --d5: #4a4234;
+    --paper: #0b0d10;
+    --ink: #e8edf2;
+    --silver: #8a95a3;
+    --wax: #ff6250;
+    --rebate: #2a313b;
+    --d0: #11141a;
+    --d1: #171c24;
+    --d2: #1f252f;
+    --d3: #28303c;
+    --d4: #323b49;
+    --d5: #3d4757;
   }
 }
 
