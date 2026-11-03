@@ -1,8 +1,10 @@
 # Dashboard redesign: make it a proper dashboard
 
 **Date:** 2026-11-01
-**Status:** approved, not yet built. One attempt on 2026-11-01 was rejected in full; read
-"What was tried" below before starting another.
+**Status:** built on 2026-11-02 as The Proof Sheet. The visual world this spec commissioned
+is the one that shipped; two of its invariants were withdrawn by the author the same day and
+are struck below. The depth work that followed has its own document,
+`2026-11-02-board-depth-design.md`.
 **Scope:** `worker/src/render.ts` only. The CLI and its terminal table are untouched.
 
 ## Problem
@@ -56,14 +58,18 @@ code, and each survives any visual world.
   and the flags are the page's whole value. Check contrast in both schemes for anything new.
 - **Dark mode is a first-class scheme.** The page is read on a phone, at night. Not an
   inversion, not an afterthought.
-- **Nothing becomes interactive.** Read-only is a product decision, not a layout one: there is
-  no write path, and `PRODUCT.md` defers one because it needs real per-user auth.
+- ~~**Nothing becomes interactive.**~~ **Withdrawn 2026-11-02.** The reasoning was about
+  writes needing real per-user auth and it survives; the wording did not. A frame's name now
+  links to that project's own page, which writes nothing and needs no new auth. There is still
+  no write path.
 - **Do not re-sort.** Payload order is `_sort_key` order from the CLI, and a comment at that
   code says why: re-sorting makes the two views disagree about what matters.
 - **The flags keep the CLI's exact strings** (`!`, `stuck Nd`, `dirty`, `^N`), so the terminal
   and the page never need translating.
 - **No dependencies, no build step, no client-side fetch.** The page must work from the HTML
-  that arrives. Styles stay inline in `render.ts`.
+  that arrives. Styles stay inline in `render.ts`. Reworded in `PRODUCT.md` on 2026-11-02 to
+  say what it actually bans: more server-rendered routes are fine, and the project pages are
+  exactly that.
 - **Every interpolated value goes through `escapeHtml`.** Project names and notes are user text
   rendered in a browser. The rule lives as a comment at that function.
 

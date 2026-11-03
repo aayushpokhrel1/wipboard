@@ -64,9 +64,12 @@ contradiction between them is the product.
   (`/wipboard`), not a command remembered.
 - **A folder of repos.** `wipboard init <root>` discovers repos one level deep under each
   registered root. Several of the folders it was built against have no git at all.
-- **A phone, away from the machine.** The Worker page is the same board as a web page, pushed
-  by `wipboard push`, ideally from a `post-commit` hook. It is a snapshot and can be stale,
-  which is why the page leads with its own age.
+- **A phone away from the machine, and the desktop too.** The Worker page is the same board as
+  a web page, pushed by `wipboard push`, ideally from a `post-commit` hook. It is a snapshot
+  and can be stale, which is why the page leads with its own age. This said "a phone, away
+  from the machine" until 2026-11-02, and the design treated the wide layout as an
+  afterthought because of it. The author corrected that: they open it on the computer as well,
+  so both widths are first-class.
 - **Private by construction.** The board is the user's whole project list, so the Worker
   refuses to serve it until either token mode (`VIEW_TOKEN`) or Cloudflare Access is
   configured. A missing or misspelled variable locks the board rather than publishing it.
@@ -78,6 +81,14 @@ contradiction between them is the product.
 - **The three flags:** `!` (suspect: commits newer than the stage change), `stuck Nd` (stage
   unchanged over 30 days while commits kept landing), `dirty` / `^N` (uncommitted or unpushed
   work).
+- **No build step, no client-side fetch, no runtime dependency in the Worker.** What this bans
+  is specific: fetching the board's data on the client, because that reintroduces a loading
+  state and a failure mode where the frame arrives and the data never does, which for a page
+  whose whole thesis is admitting its own age is the same bug twice; a bundler or asset
+  pipeline, because `npx wrangler deploy` is the whole deploy and a build artifact is one more
+  thing that can be stale than its source; and runtime dependencies in the path that serves a
+  private project list. It does not ban more server-rendered routes, inline SVG drawn on the
+  server, or a few lines of inline script.
 - **The CLI is standard library only**, Python 3.11+. The Worker has its own dev dependencies;
   nothing installed to run `wipboard` does.
 - **The store is `~/.config/wipboard/projects.json`** and holds only `stage`, `note`,
@@ -87,7 +98,11 @@ contradiction between them is the product.
 - **git failures are normal, not errors.** Every git call degrades to "no git" rather than
   raising.
 - **`wipboard md` writes a view, not a store.** Regenerated, never hand-edited.
-- **The dashboard is read-only.** Stages change in the CLI.
+- **The dashboard has no write path.** Stages change in the CLI. It said "read-only" until
+  2026-11-02, which was read as "nothing may be interactive" and used to argue against links.
+  The reasoning was always about writes needing real per-user auth rather than one shared
+  token; navigating to a project's own page writes nothing and needs no new auth, so the
+  dashboard now has links and still has no write path.
 - **One machine, one writer.** Every push overwrites a single KV key.
 
 These describe the product as built on 2026-10-26. The user was asked on that date whether to
@@ -161,8 +176,10 @@ entire value of the page.
 - **A second machine writing to the board.** One key, one writer. The payload already carries
   `host`, so a per-host key and a merged view is an additive change, but nothing is built for
   it until a second machine exists.
-- **Editing stages from the dashboard.** Read-only. A write path needs real per-user auth
-  rather than one shared token, and the CLI is already where stages change.
+- **Editing stages from the dashboard.** A write path needs real per-user auth rather than one
+  shared token, and the CLI is already where stages change. Still deferred after the dashboard
+  gained links on 2026-11-02: reading more is not writing, and nothing about that change moved
+  this one closer.
 - **Remote providers (GitHub issues, PR counts, CI status).** Needs network, auth, and rate
   limits for information that does not change which project you pick up today.
 - **`remove` and `rename` commands.** `init` rescans, and the store is readable JSON.

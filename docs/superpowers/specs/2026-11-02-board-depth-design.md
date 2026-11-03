@@ -1,7 +1,9 @@
 # Board depth: what is happening here, and what is next
 
 **Date:** 2026-11-02
-**Status:** design, not approved, nothing built
+**Status:** approved 2026-11-02 and built the same day. The board sections, the project pages,
+the CLI's derived fields and payload v2 all shipped. History and evolution remain the named
+next feature and are still not built.
 **Supersedes in part:** `2026-11-01-dashboard-redesign.md`, which stays the authority on the
 visual world. This document changes what the board knows and how many surfaces it has.
 
