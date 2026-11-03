@@ -172,6 +172,17 @@ function stageCounts(projects: Project[]): Array<[string, number]> {
   return ordered;
 }
 
+// A project's own page. The name is encoded whole rather than slugged: a slug
+// needs a collision rule, and two projects called "api" and "API" would need
+// one. encodeURIComponent round-trips to the exact name, so the lookup is an
+// equality check and there is nothing to collide.
+//
+// Still escaped for the attribute: encodeURIComponent leaves ' and & alone,
+// and this is interpolated into HTML, not just into a URL.
+export function projectHref(name: string): string {
+  return escapeHtml(`/p/${encodeURIComponent(name)}`);
+}
+
 // Is this a project you are currently inside? Derived, never hand-set, and
 // deliberately narrow: this decides what leads the page, and a section holding
 // half the board leads with nothing. Uncommitted work and unpushed commits are
@@ -240,7 +251,7 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
           <span class="num">${number}</span>
           <span class="stage">${escapeHtml(project.stage)}</span>
         </div>
-        <p class="name">${escapeHtml(project.name)}</p>
+        <p class="name"><a href="${projectHref(project.name)}">${escapeHtml(project.name)}</a></p>
         <p class="meta">
           <span class="touched">${escapeHtml(touched)}</span>
           <span class="in-stage">${escapeHtml(inStage)} in stage</span>
@@ -478,6 +489,42 @@ body {
   text-decoration: line-through 2px var(--wax);
 }
 
+/* Links. The page was read-only and link-free until 2026-11-02; a frame's name
+   now opens that project. Underlines are offset rather than removed, and the
+   focus ring is wax so it is visible on every density step. */
+a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--wax); outline-offset: 2px; }
+.name a { text-decoration-color: var(--rebate); }
+
+/* A project's own page. One frame at sheet width, then the blocks the board
+   had no room for. */
+.back { margin: 1rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; }
+.single { max-width: 46rem; margin: .6rem 0 0; }
+.single .frame { padding: .7rem .8rem .75rem; }
+.single .name { font-size: 1.4rem; }
+.single > .note { margin: .8rem 0 0; font-size: 1rem; max-width: 42rem; }
+.block { margin: 1.4rem 0 0; }
+.block h2 {
+  margin: 0 0 .4rem;
+  padding-bottom: .3rem;
+  border-bottom: 1px solid var(--rebate);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .7rem;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--silver);
+}
+.next-full { margin: 0; padding-left: 1.1rem; }
+.next-full li { margin-top: .3rem; line-height: 1.4; overflow-wrap: anywhere; }
+.paths { margin: 0; padding-left: 1.1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+.paths li { margin-top: .15rem; overflow-wrap: anywhere; }
+.provenance, .absent { margin: .45rem 0 0; font-size: .8rem; color: var(--silver); }
+.single .log { font-size: .78rem; }
+.single .log li { font-size: .78rem; }
+.single .log .when { flex-basis: 3.2rem; }
+
 .caption { padding: .25rem .1rem 0 .55rem; }
 .note { margin: 0; font-size: .82rem; line-height: 1.35; overflow-wrap: anywhere; }
 .git {
@@ -622,6 +669,98 @@ ${entries.map(({ project, index }) => renderFrame(project, index, nowMs, isLead)
 ${section(lead, "working on", true)}
 ${section(rest, "the rest", false)}`;
   return page("wipboard", body);
+}
+
+// One project in full. Everything the payload holds about it, with nothing
+// capped for space the way the board caps things, because this page exists
+// precisely for the reader who wanted more than the frame had room for.
+//
+// The exposure stamp leads here too. A project page read on its own is just as
+// capable of silently showing yesterday as the board is, so the age outranks
+// the project's name on this surface as well.
+export function renderProject(payload: Board, project: Project, now: Date): string {
+  const nowMs = now.getTime();
+  const age = snapshotAge(parseStamp(payload.generated_at), nowMs);
+  const suspect = project.flags.includes("!");
+  const step = density(parseStamp(project.last_commit), nowMs);
+  const flags = project.flags
+    .map((flag) => `<span class="flag">${escapeHtml(flag)}</span>`)
+    .join(" ");
+  const nextItems = project.next?.items ?? [];
+  const sourceLabel: Record<string, string> = {
+    handover: "read from HANDOVER.md",
+    todo: "read from the TODO file",
+    plan: "read from the newest plan",
+  };
+  const next = nextItems.length
+    ? `<section class="block">
+    <h2>next</h2>
+    <ul class="next-full">${nextItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+    <p class="provenance">${escapeHtml(sourceLabel[project.next?.source ?? ""] ?? "")}</p>
+  </section>`
+    : `<section class="block">
+    <h2>next</h2>
+    <p class="absent">This project has no HANDOVER.md, TODO or plan for the board to read.</p>
+  </section>`;
+  const commits = project.recent ?? [];
+  const log = commits.length
+    ? `<section class="block">
+    <h2>recent</h2>
+    <ol class="log">${commits
+      .map(
+        (commit) =>
+          `<li><span class="when">${escapeHtml(humanAge(parseStamp(commit.at), nowMs))}</span>
+          <span class="what">${escapeHtml(commit.subject)}</span></li>`,
+      )
+      .join("")}</ol>
+  </section>`
+    : "";
+  const paths = project.uncommitted ?? [];
+  const uncommitted = paths.length
+    ? `<section class="block">
+    <h2>uncommitted</h2>
+    <ul class="paths">${paths.map((path) => `<li>${escapeHtml(path)}</li>`).join("")}</ul>
+    ${
+      project.changed > paths.length
+        ? `<p class="provenance">and ${escapeHtml(String(project.changed - paths.length))} more</p>`
+        : ""
+    }
+  </section>`
+    : "";
+  const body = `${sheetHead(age, payload.host, "")}
+<p class="back"><a href="/">back to the sheet</a></p>
+<article class="single">
+  <div class="frame d${step === -1 ? "x" : step}${suspect ? " suspect" : ""}">
+    <div class="head">
+      <span class="num">${escapeHtml(project.has_git ? project.branch || "?" : "no git")}</span>
+      <span class="stage">${escapeHtml(project.stage)}</span>
+    </div>
+    <p class="name">${escapeHtml(project.name)}</p>
+    <p class="meta">
+      <span class="touched">${escapeHtml(humanAge(parseStamp(project.last_commit), nowMs))}</span>
+      <span class="in-stage">${escapeHtml(humanAge(parseStamp(project.stage_set_at), nowMs))} in stage</span>
+      ${flags}
+    </p>
+  </div>
+  ${project.note ? `<p class="note">${escapeHtml(project.note)}</p>` : ""}
+  ${next}
+  ${log}
+  ${uncommitted}
+</article>`;
+  return page(`wipboard: ${project.name}`, body);
+}
+
+// A name in the URL that is not on the board. It is a 404 and it says which
+// name it looked for, because the usual cause is a project renamed in the CLI
+// since the link was opened.
+export function renderProjectMissing(name: string): string {
+  const body = `${sheetHead({ text: "No such frame", tone: "stale", note: "" }, "", "")}
+<div class="empty">
+  <p>Nothing on this board is called ${escapeHtml(name)}.</p>
+  <p>It may have been renamed or dropped since this page was last pushed.</p>
+  <p><a href="/">Back to the sheet</a></p>
+</div>`;
+  return page("wipboard: no such frame", body);
 }
 
 // An unknown version means the CLI was upgraded and the Worker was not. Say so

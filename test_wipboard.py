@@ -621,3 +621,22 @@ def test_handover_stays_a_current_state_note() -> None:
 
     dated = [l for l in lines if re.match(r"^#{1,4} .*\d{4}-\d{2}-\d{2}", l)]
     assert not dated, f"dated headings belong in git log, not the handover: {dated}"
+
+
+def test_uncommitted_keeps_the_whole_first_path(tmp_path: Path) -> None:
+    """Catches the fixed line[3:] slice eating a character off the first path.
+
+    _git strips the whole status output, so a " M path" line arrives without its
+    leading space and a fixed slice turns wipboard.py into ipboard.py. It is
+    only ever wrong on the first line, which is why it survived a review.
+    """
+    repo = tmp_path / "r"
+    make_repo(repo, when=datetime(2026, 1, 1, 12, 0))
+    (repo / "wipboard.py").write_text("x\n", encoding="utf-8")
+    (repo / "second.py").write_text("y\n", encoding="utf-8")
+
+    info = wipboard.git_info(repo)
+
+    assert "wipboard.py" in info["paths"]
+    assert "second.py" in info["paths"]
+    assert not any(path.startswith("ipboard") for path in info["paths"])

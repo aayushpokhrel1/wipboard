@@ -26,6 +26,11 @@ STUCK_DAYS = 30
 # must not write into its own install directory.
 STORE_RELATIVE = (".config", "wipboard", "projects.json")
 
+# The status characters at the head of a git status --porcelain line, plus the
+# space after them. One or two, because _git strips the whole output and a
+# " M path" line arrives having lost its leading space.
+_PORCELAIN_STATUS = re.compile(r"^\S{1,2}\s+")
+
 # Every timestamp in the store is a naive UTC ISO string written with
 # utc_now().isoformat() and read back with datetime.fromisoformat. Keep every
 # comparison naive-UTC-to-naive-UTC; mixing in an aware datetime raises.
@@ -192,7 +197,11 @@ def git_info(repo: Path) -> dict | None:
     for line in (status or "").splitlines():
         if not line.strip():
             continue
-        path = line[3:].strip()
+        # Not line[3:]. Porcelain is "XY<space>PATH", but _git strips the whole
+        # output, which eats the leading space of a " M path" line, so a fixed
+        # slice cuts a character off the first path and only the first path.
+        # Drop the status characters and the space after them instead.
+        path = _PORCELAIN_STATUS.sub("", line.strip(), count=1)
         # A rename reads "old -> new"; the destination is the path that exists.
         if " -> " in path:
             path = path.split(" -> ", 1)[1].strip()

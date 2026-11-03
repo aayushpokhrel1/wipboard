@@ -90,3 +90,70 @@ describe("access mode", () => {
     expect(response.status).toBe(404);
   });
 });
+
+// The project route reads the same private project list the board does. A new
+// route that reaches KV without going through mayView first is how this board
+// gets published by accident, so it is tested the same way the board is.
+describe("the project route", () => {
+  beforeEach(async () => {
+    await env.BOARD.put("board:current", JSON.stringify(BOARD));
+  });
+
+  it("refuses a viewer with no cookie, in token mode", async () => {
+    const response = await get("/p/alpha", { VIEW_TOKEN, AUTH_MODE: "token" });
+    expect(response.status).toBe(401);
+    const body = await response.text();
+    expect(body).not.toContain("alpha");
+  });
+
+  it("refuses to serve when VIEW_TOKEN is unset rather than opening up", async () => {
+    const response = await get("/p/alpha", { VIEW_TOKEN: "", AUTH_MODE: "token" });
+    expect(response.status).toBe(503);
+  });
+
+  it("serves the project once the cookie is presented", async () => {
+    const response = await get(
+      "/p/alpha",
+      { VIEW_TOKEN, AUTH_MODE: "token" },
+      { Cookie: `wipboard_view=${encodeURIComponent(VIEW_TOKEN)}` },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("alpha");
+  });
+
+  it("404s a name that is not on the board, without leaking the board", async () => {
+    const response = await get(
+      "/p/nope",
+      { VIEW_TOKEN, AUTH_MODE: "token" },
+      { Cookie: `wipboard_view=${encodeURIComponent(VIEW_TOKEN)}` },
+    );
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain("alpha");
+  });
+
+  it("round-trips a name needing encoding, so the link is the lookup", async () => {
+    await env.BOARD.put(
+      "board:current",
+      JSON.stringify({
+        ...BOARD,
+        projects: [{ ...BOARD.projects[0], name: "a b & c" }],
+      }),
+    );
+    const response = await get(
+      `/p/${encodeURIComponent("a b & c")}`,
+      { VIEW_TOKEN, AUTH_MODE: "token" },
+      { Cookie: `wipboard_view=${encodeURIComponent(VIEW_TOKEN)}` },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("a b &amp; c");
+  });
+
+  it("404s a malformed percent-escape rather than throwing", async () => {
+    const response = await get(
+      "/p/%E0%A4%A",
+      { VIEW_TOKEN, AUTH_MODE: "token" },
+      { Cookie: `wipboard_view=${encodeURIComponent(VIEW_TOKEN)}` },
+    );
+    expect(response.status).toBe(404);
+  });
+});

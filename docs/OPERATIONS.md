@@ -11,7 +11,7 @@ wipboard                      # then this works anywhere
 ## Verify
 
 ```bash
-python -m pytest              # 31 tests, the whole suite
+python -m pytest              # 32 tests, the whole suite
 ```
 
 **pytest is required.** `python test_wipboard.py` runs nothing and exits 0, because the tests
@@ -77,7 +77,7 @@ as a web page. The CLI does not need it and sends nothing anywhere until `endpoi
 npm --prefix worker test
 ```
 
-25 tests plus `tsc --noEmit`, run in the real Workers runtime via
+31 tests plus `tsc --noEmit`, run in the real Workers runtime via
 `@cloudflare/vitest-pool-workers`, not a mock.
 
 ### First deploy

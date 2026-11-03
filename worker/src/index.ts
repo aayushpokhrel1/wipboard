@@ -1,4 +1,11 @@
-import { PAYLOAD_VERSION, renderBoard, renderEmpty, renderVersionMismatch } from "./render";
+import {
+  PAYLOAD_VERSION,
+  renderBoard,
+  renderEmpty,
+  renderProject,
+  renderProjectMissing,
+  renderVersionMismatch,
+} from "./render";
 import type { Board } from "./render";
 
 const MAX_BODY_BYTES = 1048576;
@@ -137,7 +144,8 @@ function html(body: string): Response {
   });
 }
 
-async function dashboard(env: Env): Promise<Response> {
+/** The stored board, or the response that should be served instead of one. */
+async function readBoard(env: Env): Promise<Board | Response> {
   const stored = await env.BOARD.get(BOARD_KEY);
   if (stored === null) {
     return html(renderEmpty());
@@ -157,7 +165,28 @@ async function dashboard(env: Env): Promise<Response> {
     return html(renderVersionMismatch(version));
   }
 
-  return html(renderBoard(payload as Board, new Date()));
+  return payload as Board;
+}
+
+async function dashboard(env: Env): Promise<Response> {
+  const board = await readBoard(env);
+  return board instanceof Response ? board : html(renderBoard(board, new Date()));
+}
+
+// Every state of the project route reuses the board's own empty and mismatch
+// pages, so the two routes fail identically rather than inventing a second set
+// of failure screens to keep in step.
+async function projectPage(env: Env, name: string): Promise<Response> {
+  const board = await readBoard(env);
+  if (board instanceof Response) return board;
+  const project = board.projects.find((candidate) => candidate.name === name);
+  if (project === undefined) {
+    return new Response(renderProjectMissing(name), {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
+  return html(renderProject(board, project, new Date()));
 }
 
 export default {
@@ -172,6 +201,21 @@ export default {
     if (request.method === "GET" && url.pathname === "/") {
       const refusal = await mayView(request, env);
       return refusal ?? dashboard(env);
+    }
+    // A project page shows the same private project list the board does, so it
+    // goes through the same gate. A new route that reads BOARD without calling
+    // mayView first is how this board gets published by accident.
+    if (request.method === "GET" && url.pathname.startsWith("/p/")) {
+      const refusal = await mayView(request, env);
+      if (refusal) return refusal;
+      let name: string;
+      try {
+        name = decodeURIComponent(url.pathname.slice("/p/".length));
+      } catch {
+        // A malformed percent-escape is a bad URL, not a server fault.
+        return new Response("not found", { status: 404 });
+      }
+      return projectPage(env, name);
     }
     return new Response("not found", { status: 404 });
   },
