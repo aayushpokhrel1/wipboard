@@ -5,7 +5,7 @@ const TOKEN = "local-dev-token-not-a-real-secret";
 const URL = "https://example.com/api/board";
 
 const PAYLOAD = {
-  version: 1,
+  version: 2,
   generated_at: "2026-10-20T12:00:00",
   host: "H",
   projects: [],

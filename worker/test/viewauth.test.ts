@@ -4,7 +4,7 @@ import worker from "../src/index";
 
 const VIEW_TOKEN = "view-token-for-tests";
 const BOARD = {
-  version: 1,
+  version: 2,
   generated_at: "2026-10-22T12:00:00",
   host: "H",
   projects: [

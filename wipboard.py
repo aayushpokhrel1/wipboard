@@ -232,10 +232,28 @@ _NEXT_HEADING = re.compile(r"^#{1,6}\s*next\b", re.IGNORECASE)
 _CHECKLIST = re.compile(r"^\[[ xX]\]\s*")
 
 
+def _plain(text: str) -> str:
+    """Drop inline markdown emphasis and code ticks.
+
+    These items are read in a terminal table and in a browser, neither of which
+    renders markdown, so `**Dashboard redesign**` would otherwise arrive with
+    its asterisks showing. Only the inline marks are dropped; the words and
+    their order are untouched.
+    """
+    return text.replace("**", "").replace("__", "").replace("`", "")
+
+
+def _strip_marker_parts(line: str) -> tuple[bool, str]:
+    """(had a list marker, the text without it). The flag is what lets a caller
+    tell a new item from the continuation of a wrapped one."""
+    stripped = _LIST_MARKER.sub("", line, count=1).strip()
+    had_marker = stripped != line.strip()
+    return had_marker, _CHECKLIST.sub("", stripped, count=1).strip()
+
+
 def _strip_marker(line: str) -> str:
     """Drop a leading list marker, and a checklist box if one follows it."""
-    stripped = _LIST_MARKER.sub("", line, count=1).strip()
-    return _CHECKLIST.sub("", stripped, count=1).strip()
+    return _strip_marker_parts(line)[1]
 
 
 def _read_lines(path: Path) -> list[str] | None:
@@ -271,12 +289,25 @@ def _next_from_handover(folder: Path) -> list[str]:
         # Without this it arrives on the board as an item reading "### detail".
         if heading:
             continue
+        # A blank line ends the current item, so the next prose line starts a
+        # new one rather than running two entries together.
         if not line.strip():
+            if items and items[-1] == "":
+                items.pop()
+            items.append("")
             continue
-        item = _strip_marker(line)
-        if item:
+        marker, item = _strip_marker_parts(line)
+        if not item:
+            continue
+        # A wrapped item is one item. A "Next" section written as prose rather
+        # than as a list used to arrive as one entry per physical line, breaking
+        # mid-sentence on the board; a line with no marker of its own continues
+        # the line above it.
+        if not marker and items and items[-1]:
+            items[-1] = f"{items[-1]} {item}"
+        else:
             items.append(item)
-    return items
+    return [item for item in items if item]
 
 
 def _next_from_todo(folder: Path) -> list[str]:
@@ -352,7 +383,10 @@ def project_next(folder: Path) -> tuple[list[str], str]:
         except (OSError, UnicodeDecodeError, ValueError):
             items = []
         if items:
-            return ([item[:NEXT_MAX_CHARS] for item in items[:NEXT_MAX_ITEMS]], source)
+            return (
+                [_plain(item)[:NEXT_MAX_CHARS] for item in items[:NEXT_MAX_ITEMS]],
+                source,
+            )
     return ([], "")
 
 

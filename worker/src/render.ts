@@ -10,7 +10,12 @@
 // system is documented in DESIGN.md; the rules a reader of this file must not
 // break are comments at the code below.
 
-export const PAYLOAD_VERSION = 1;
+export const PAYLOAD_VERSION = 2;
+
+export interface Commit {
+  at: string | null;
+  subject: string;
+}
 
 export interface Project {
   name: string;
@@ -23,6 +28,12 @@ export interface Project {
   branch: string;
   subject: string;
   changed: number;
+  // Version 2. Every one is optional at the type level because a payload
+  // written by an older CLI than this Worker is a version the Worker accepts,
+  // and a missing field must render as absent rather than as undefined.
+  recent?: Commit[];
+  uncommitted?: string[];
+  next?: { items: string[]; source: string };
 }
 
 export interface Board {
@@ -161,13 +172,29 @@ function stageCounts(projects: Project[]): Array<[string, number]> {
   return ordered;
 }
 
+// Is this a project you are currently inside? Derived, never hand-set, and
+// deliberately narrow: this decides what leads the page, and a section holding
+// half the board leads with nothing. Uncommitted work and unpushed commits are
+// the strongest signals, because both mean you stopped mid-thing; a commit in
+// the last three days is the weaker one that catches a project you left clean.
+function inFlight(project: Project, now: number): boolean {
+  if (project.changed > 0) return true;
+  if (project.flags.some((flag) => flag.startsWith("^"))) return true;
+  const last = parseStamp(project.last_commit);
+  return last !== null && now - last < 3 * DAY_MS;
+}
+
 // One frame of the sheet. The furniture is identical in every frame and in the
-// same positions, which is what makes nineteen of these read across as one
-// object instead of down as nineteen things: number and stage in the frame's
-// head, name, then the age line. The note and the git line print in the
-// rebate below the frame, the way a caption is written in a proof sheet's
-// margin, so an absent note never changes the frame's own shape.
-function renderFrame(project: Project, index: number, now: number): string {
+// same positions, which is what makes these read across as one object instead
+// of down as a list: number and stage in the frame's head, name, then the age
+// line. The note and the git line print in the rebate below the frame, the way
+// a caption is written in a proof sheet's margin, so an absent note never
+// changes the frame's own shape.
+//
+// `lead` is the in-flight section, where the frame also carries what the next
+// work is and the recent commit sequence. The compact frame is the same frame
+// with those two blocks absent, so both sections read as one sheet.
+function renderFrame(project: Project, index: number, now: number, lead = false): string {
   const suspect = project.flags.includes("!");
   const lastCommit = parseStamp(project.last_commit);
   const step = density(lastCommit, now);
@@ -180,6 +207,26 @@ function renderFrame(project: Project, index: number, now: number): string {
   const caption = project.note
     ? `<p class="note">${escapeHtml(project.note)}</p>`
     : "";
+  const nextItems = project.next?.items ?? [];
+  // The depth only prints in the lead section. Nineteen of these at once is
+  // the wall of paragraphs this redesign exists to avoid.
+  const next =
+    lead && nextItems.length
+      ? `<div class="next">
+        <p class="next-head">next</p>
+        <ul>${nextItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </div>`
+      : "";
+  const commits = lead ? (project.recent ?? []).slice(0, 4) : [];
+  const log = commits.length
+    ? `<ol class="log">${commits
+        .map(
+          (commit) =>
+            `<li><span class="when">${escapeHtml(humanAge(parseStamp(commit.at), now))}</span>
+            <span class="what">${escapeHtml(commit.subject)}</span></li>`,
+        )
+        .join("")}</ol>`
+    : "";
   const git = project.has_git
     ? `<span class="branch">${escapeHtml(project.branch || "?")}</span>
         <span class="subject">${escapeHtml(project.subject)}</span>
@@ -187,7 +234,7 @@ function renderFrame(project: Project, index: number, now: number): string {
     : `<span class="subject">no git</span>`;
   // --i staggers the develop animation. It is set here rather than with an
   // nth-child rule because the board's length is data, not a constant.
-  return `<li class="cell" style="--i:${index}">
+  return `<li class="cell${lead ? " lead" : ""}" style="--i:${index}">
       <div class="frame d${step === -1 ? "x" : step}${suspect ? " suspect" : ""}">
         <div class="head">
           <span class="num">${number}</span>
@@ -199,9 +246,11 @@ function renderFrame(project: Project, index: number, now: number): string {
           <span class="in-stage">${escapeHtml(inStage)} in stage</span>
           ${flags}
         </p>
+        ${next}
       </div>
       <div class="caption">
         ${caption}
+        ${log}
         <p class="git">${git}</p>
       </div>
     </li>`;
@@ -310,12 +359,59 @@ body {
    grid would put frame 2 beside frame 1 and turn the ranking into a zigzag.
    CSS multicolumn reads top to bottom down each column, so the ranking
    survives at every width with no committed row count. */
+/* The sheet is cut into two, and the cut is the page's main hierarchy: what
+   you are inside leads, everything else follows. The label sits in the rebate
+   as machine type, not as a title, because it is a caption on a sheet and not
+   a heading on a document. */
+.section {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  margin: 1.6rem 0 .5rem;
+  padding-bottom: .35rem;
+  border-bottom: 1px solid var(--rebate);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .7rem;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--silver);
+}
+.section span { margin-left: auto; color: var(--ink); font-weight: 700; }
+
 .sheet {
-  margin: 1.25rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   column-gap: .5rem;
 }
+/* The lead section's frames carry the depth, so they are wider and fewer to a
+   row. The compact section below runs at the sheet's full density. */
+.sheet-lead { column-gap: .6rem; }
+.next { margin: .45rem 0 0; }
+.next-head {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .62rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  opacity: .75;
+}
+.next ul { margin: .15rem 0 0; padding-left: .9rem; }
+.next li { font-size: .82rem; line-height: 1.3; margin-top: .12rem; overflow-wrap: anywhere; }
+/* The recent commit sequence. One subject tells you nothing; four read in
+   order tell you whether this is being built, documented or nursed. */
+.log { margin: .3rem 0 0; padding: 0; list-style: none; }
+.log li {
+  display: flex;
+  gap: .5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .66rem;
+  line-height: 1.45;
+  color: var(--silver);
+}
+.log .when { flex: 0 0 2.6rem; text-align: right; }
+.log .what { overflow-wrap: anywhere; }
 .cell { break-inside: avoid; margin-bottom: .5rem; }
 .frame {
   position: relative;
@@ -367,21 +463,17 @@ body {
    the stale stamp on the paper. */
 .flag { font-weight: 700; }
 
-/* The grease pencil. A suspect frame is marked three ways at once, only one of
-   which is colour: a drawn wax ring, the frame number struck through, and the
-   literal "!" among the flags. The ring is deliberately off-square and
-   off-axis, and it is drawn clear of the type: a mark through a repo name is
-   a mark that costs you the name. */
-.frame.suspect::before {
-  content: "";
-  position: absolute;
-  inset: -2px -3px -3px -2px;
-  border: 3px solid var(--wax);
-  border-radius: 46% 54% 49% 51% / 52% 47% 53% 48%;
-  transform: rotate(-1.4deg);
-  opacity: .92;
-  pointer-events: none;
-}
+/* The grease pencil. A suspect frame is one whose stage may be a lie, so the
+   mark goes through the stage word and says exactly that. Three channels, only
+   one of which is colour: the struck stage, the struck frame number, and the
+   literal "!" among the flags.
+
+   This was a drawn wax ring around the whole frame until 2026-11-02. It was
+   unmissable and it was too much: six rings on nineteen frames read as damage
+   rather than as a flag, and the ring said "something is wrong here" where the
+   strike says the specific thing that is wrong. Do not bring the ring back
+   without re-reading what the "!" actually means. */
+.frame.suspect .stage,
 .frame.suspect .num {
   text-decoration: line-through 2px var(--wax);
 }
@@ -448,15 +540,17 @@ code {
 /* Two columns on every phone. One column of nineteen frames is the scrolling
    list this page was redesigned to stop being, and 22rem is below the
    narrowest phone still shipping. */
-@media (min-width: 22rem) { .sheet { columns: 2; } }
+@media (min-width: 22rem) { .sheet { columns: 2; } .sheet-lead { columns: 1; } }
 @media (min-width: 48rem) {
   body { padding: 1.5rem 1.5rem 3rem; }
   .sheet { columns: 3; column-gap: .65rem; }
+  .sheet-lead { columns: 2; }
   .cell { margin-bottom: .65rem; }
 }
 @media (min-width: 70rem) {
   body { max-width: 86rem; margin: 0 auto; }
   .sheet { columns: 4; }
+  .sheet-lead { columns: 3; }
 }
 `;
 
@@ -505,14 +599,28 @@ export function renderBoard(payload: Board, now: Date): string {
   const tally = counts ? `<ul class="tally">${counts}</ul>` : "";
   // Payload order is _sort_key order from the CLI. Re-sorting here would make
   // the two views disagree about what matters, which is worse than one view.
-  // The frame numbers carry that order, so it survives the column flow.
-  const frames = payload.projects
-    .map((project, index) => renderFrame(project, index, nowMs))
-    .join("\n");
+  //
+  // So the page partitions rather than sorts. Both sections keep payload order
+  // internally and the frame numbers are assigned before the split, so a frame
+  // number still means the same rank it does in the terminal. Moving a project
+  // between sections never changes its number.
+  const numbered = payload.projects.map((project, index) => ({ project, index }));
+  const lead = numbered.filter(({ project }) => inFlight(project, nowMs));
+  const rest = numbered.filter(({ project }) => !inFlight(project, nowMs));
+  const section = (
+    entries: typeof numbered,
+    label: string,
+    isLead: boolean,
+  ): string =>
+    entries.length
+      ? `<h2 class="section">${escapeHtml(label)} <span>${entries.length}</span></h2>
+<ol class="sheet${isLead ? " sheet-lead" : ""}">
+${entries.map(({ project, index }) => renderFrame(project, index, nowMs, isLead)).join("\n")}
+</ol>`
+      : "";
   const body = `${sheetHead(age, payload.host, tally)}
-<ol class="sheet">
-${frames}
-</ol>`;
+${section(lead, "working on", true)}
+${section(rest, "the rest", false)}`;
   return page("wipboard", body);
 }
 
