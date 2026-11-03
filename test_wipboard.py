@@ -435,7 +435,10 @@ def test_project_next_caps_items_and_truncates_long_ones(tmp_path: Path) -> None
 
     assert source == "handover"
     assert len(items) == 4
-    assert items[0] == "x" * 160
+    # One unbroken run of x has no space to back up to, so it cuts at the cap
+    # and says so. The ellipsis is the point: a reader cannot otherwise tell a
+    # truncated item from a genuinely terse one.
+    assert items[0] == "x" * 160 + "…"
     assert items[1] == "item0"
 
 
@@ -777,3 +780,15 @@ def test_uncommitted_keeps_the_whole_first_path(tmp_path: Path) -> None:
     assert "wipboard.py" in info["paths"]
     assert "second.py" in info["paths"]
     assert not any(path.startswith("ipboard") for path in info["paths"])
+
+
+def test_next_item_cut_lands_on_a_word_boundary(tmp_path: Path) -> None:
+    """Catches a cut landing mid-word, which reads as a bug and not as a cut."""
+    words = ("alpha " * 60).strip()
+    (tmp_path / "HANDOVER.md").write_text(f"## Next\n\n- {words}\n", encoding="utf-8")
+
+    items, _ = wipboard.project_next(tmp_path)
+
+    assert items[0].endswith("…")
+    assert items[0][:-1].endswith("alpha")
+    assert len(items[0]) <= wipboard.NEXT_MAX_CHARS + 1

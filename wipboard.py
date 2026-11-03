@@ -246,6 +246,24 @@ _NEXT_HEADING = re.compile(r"^#{1,6}\s*next\b", re.IGNORECASE)
 _CHECKLIST = re.compile(r"^\[[ xX]\]\s*")
 
 
+def _clip(text: str) -> str:
+    """Cut to the cap, at a word boundary, and say that it was cut.
+
+    The design note for this said to append nothing. Rendered, that was wrong:
+    an item ending 'open the DEV "Chec' reads as a bug rather than as a cut,
+    and a reader cannot tell a truncated item from a genuinely terse one.
+    """
+    if len(text) <= NEXT_MAX_CHARS:
+        return text
+    cut = text[:NEXT_MAX_CHARS]
+    # Back up to the last space so the cut does not land mid-word, unless that
+    # would throw away most of the line.
+    space = cut.rfind(" ")
+    if space > NEXT_MAX_CHARS // 2:
+        cut = cut[:space]
+    return cut.rstrip(" ,;:.") + "…"
+
+
 def _plain(text: str) -> str:
     """Drop inline markdown emphasis and code ticks.
 
@@ -398,7 +416,7 @@ def project_next(folder: Path) -> tuple[list[str], str]:
             items = []
         if items:
             return (
-                [_plain(item)[:NEXT_MAX_CHARS] for item in items[:NEXT_MAX_ITEMS]],
+                [_clip(_plain(item)) for item in items[:NEXT_MAX_ITEMS]],
                 source,
             )
     return ([], "")
