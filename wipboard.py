@@ -149,18 +149,52 @@ def git_info(repo: Path) -> dict | None:
         return None
     # One log call, not two: the subject rides along on the same invocation
     # because twenty repos times an extra process spawn is paid on every run.
-    raw = _git(repo, "log", "-1", "--format=%cI%n%s")
+    # %x1f and %x1e, not %n: a commit subject can contain newlines, so only
+    # control characters that cannot appear in a subject can separate records
+    # and fields.
+    raw = _git(repo, "log", "-5", "--format=%cI%x1f%s%x1e")
     if raw is None:
         return None
-    # An empty subject yields one part, not two, so the second part defaults.
-    stamp, _, subject = raw.partition("\n")
+    # An empty subject yields one field, not two, so the second part defaults.
+    # Strip each record: git puts a newline between log entries as well as the
+    # %x1e we asked for, so every record after the first arrives with a leading
+    # newline that would make its timestamp unparseable.
+    records = [record.strip() for record in raw.split("\x1e") if record.strip()]
+    if not records:
+        return None
+    stamp, _, subject = records[0].partition("\x1f")
     last_commit = _parse_commit_time(stamp)
+    # A first record with an unparseable timestamp means the repo is not usable,
+    # not that it has no commits: returning a dict here would flip has_git on.
     if last_commit is None:
         return None
+    recent: list[dict] = []
+    for record in records[:5]:
+        record_stamp, _, record_subject = record.partition("\x1f")
+        record_time = _parse_commit_time(record_stamp)
+        # A later record that will not parse is skipped, not fatal: the first
+        # record already decided the repo is usable.
+        if record_time is None:
+            continue
+        recent.append({"at": record_time, "subject": record_subject})
     branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD") or "?"
     status = _git(repo, "status", "--porcelain")
     # One porcelain line per changed path, so the count comes free with dirty.
     changed = len([line for line in (status or "").splitlines() if line.strip()])
+    # The first 8 paths ride along on the same status output. changed still
+    # counts every line; paths is only what a dashboard has room to show.
+    paths: list[str] = []
+    for line in (status or "").splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].strip()
+        # A rename reads "old -> new"; the destination is the path that exists.
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1].strip()
+        if path:
+            paths.append(path)
+        if len(paths) == 8:
+            break
     # No upstream is the normal case for a local repo, not an error: the command
     # fails and the count is zero.
     ahead_raw = _git(repo, "rev-list", "--count", "@{u}..HEAD")
@@ -175,6 +209,8 @@ def git_info(repo: Path) -> dict | None:
         "ahead": ahead,
         "subject": subject,
         "changed": changed,
+        "recent": recent,
+        "paths": paths,
     }
 
 

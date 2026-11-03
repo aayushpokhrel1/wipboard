@@ -41,12 +41,40 @@ def make_repo(path: Path, when: datetime | None = None, message: str = "work") -
             "commit",
             "--allow-empty",
             # Git refuses an empty message without this, and an empty subject is
-            # exactly the case the %cI%n%s split has to survive.
+            # exactly the case the %cI%x1f%s split has to survive.
             "--allow-empty-message",
             "-m",
             message,
         ],
         cwd=path,
+        check=True,
+        capture_output=True,
+        env=env,
+    )
+
+
+def commit(repo: Path, when: datetime, message: str = "work") -> None:
+    """Add one empty commit to an existing repo, dated and messaged."""
+    stamp = when.isoformat() + " +0000"
+    env = dict(os.environ)
+    env["GIT_AUTHOR_DATE"] = stamp
+    env["GIT_COMMITTER_DATE"] = stamp
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "user.email=t@e.com",
+            "-c",
+            "user.name=T",
+            "commit",
+            "--allow-empty",
+            "--allow-empty-message",
+            "-m",
+            message,
+        ],
+        cwd=repo,
         check=True,
         capture_output=True,
         env=env,
@@ -203,11 +231,81 @@ def test_git_info_returns_subject_and_changed_count(tmp_path: Path) -> None:
 
 
 def test_empty_commit_subject_does_not_raise(tmp_path: Path) -> None:
-    """Review Focus 2: --format=%cI%n%s yields one part when the subject is empty."""
+    """Review Focus 2: --format=%cI%x1f%s%x1e yields one field when the subject is empty."""
     repo = tmp_path / "r"
     make_repo(repo, message="")
     info = wipboard.git_info(repo)
     assert info["subject"] == ""
+
+
+def test_recent_holds_five_commits_newest_first(tmp_path: Path) -> None:
+    """Catches the log call going back to -1, or the records arriving oldest first."""
+    repo = tmp_path / "r"
+    base = datetime(2026, 1, 1, 12, 0)
+    make_repo(repo, when=base, message="c0")
+    for i in range(1, 7):
+        commit(repo, base + timedelta(hours=i), message=f"c{i}")
+
+    info = wipboard.git_info(repo)
+
+    assert len(info["recent"]) == 5
+    assert [entry["subject"] for entry in info["recent"]] == ["c6", "c5", "c4", "c3", "c2"]
+    # last_commit and subject keep their old meaning: the first record's.
+    assert info["recent"][0]["at"] == info["last_commit"]
+    assert info["recent"][0]["subject"] == info["subject"] == "c6"
+    assert info["last_commit"] == base + timedelta(hours=6)
+
+
+def test_recent_holds_the_single_commit_of_a_new_repo(tmp_path: Path) -> None:
+    """Catches an off-by-one that drops the only record a fresh repo has."""
+    repo = tmp_path / "r"
+    make_repo(repo, when=datetime(2026, 1, 1, 12, 0), message="only")
+
+    info = wipboard.git_info(repo)
+
+    assert len(info["recent"]) == 1
+    assert info["recent"][0]["subject"] == "only"
+    assert info["recent"][0]["at"] == info["last_commit"]
+
+
+def test_multiline_subject_does_not_split_into_extra_records(tmp_path: Path) -> None:
+    """Catches %n as the record separator: a subject can contain newlines."""
+    repo = tmp_path / "r"
+    base = datetime(2026, 1, 1, 12, 0)
+    make_repo(repo, when=base, message="first line\nsecond line\nthird line")
+    commit(repo, base + timedelta(hours=1), message="later")
+
+    info = wipboard.git_info(repo)
+
+    assert len(info["recent"]) == 2
+    assert info["recent"][0]["subject"] == "later"
+    # %s is git's *subject*, which is everything up to the first blank line with
+    # newlines collapsed to spaces. The point of this test is that the newlines
+    # produce no extra records, not that they survive.
+    assert info["recent"][1]["subject"] == "first line second line third line"
+    assert info["subject"] == "later"
+
+
+def test_paths_caps_at_eight_but_changed_counts_every_line(tmp_path: Path) -> None:
+    """Catches paths truncating the count, or the count truncating paths."""
+    repo = tmp_path / "r"
+    make_repo(repo)
+    for i in range(11):
+        (repo / f"file{i:02d}.txt").write_text("x", encoding="utf-8")
+
+    info = wipboard.git_info(repo)
+
+    assert len(info["paths"]) == 8
+    assert info["changed"] == 11
+    assert info["paths"][0] == "file00.txt"
+
+
+def test_folder_with_no_git_returns_none(tmp_path: Path) -> None:
+    """Catches git_info inventing a dict for a folder that is not a repo."""
+    plain = tmp_path / "plain"
+    plain.mkdir()
+
+    assert wipboard.git_info(plain) is None
 
 
 def test_rows_carry_stage_set_at_and_branch(tmp_path: Path) -> None:
