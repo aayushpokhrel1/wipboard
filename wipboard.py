@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -73,6 +74,10 @@ class Row:
     subject: str = ""
     changed: int = 0
     stage_set_at: datetime | None = None
+    recent: list[dict] = field(default_factory=list)      # [{"at": datetime, "subject": str}, ...]
+    uncommitted: list[str] = field(default_factory=list)  # changed paths, already capped at 8
+    next_items: list[str] = field(default_factory=list)
+    next_source: str = ""
 
 
 def store_path() -> Path:
@@ -214,6 +219,143 @@ def git_info(repo: Path) -> dict | None:
     }
 
 
+# What the next work looks like is read fresh on every run from files the author
+# already maintains, and is never written to the store. The caps are a budget:
+# this rides in the push body, which the Worker limits to 1 MiB.
+NEXT_MAX_ITEMS = 4
+NEXT_MAX_CHARS = 160
+
+# A list marker at the start of a line: -, *, +, or 1. / 1) numbering.
+_LIST_MARKER = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+_HEADING = re.compile(r"^(#{1,6})\s")
+_NEXT_HEADING = re.compile(r"^#{1,6}\s*next\b", re.IGNORECASE)
+_CHECKLIST = re.compile(r"^\[[ xX]\]\s*")
+
+
+def _strip_marker(line: str) -> str:
+    """Drop a leading list marker, and a checklist box if one follows it."""
+    stripped = _LIST_MARKER.sub("", line, count=1).strip()
+    return _CHECKLIST.sub("", stripped, count=1).strip()
+
+
+def _read_lines(path: Path) -> list[str] | None:
+    """Read a text file as lines, or None when it cannot be read."""
+    try:
+        return path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+
+
+def _next_from_handover(folder: Path) -> list[str]:
+    """The lines under the first "next" heading, up to the next same-or-shallower one."""
+    lines = _read_lines(folder / "HANDOVER.md")
+    if lines is None:
+        return []
+    start = None
+    level = 0
+    for index, line in enumerate(lines):
+        if _NEXT_HEADING.match(line):
+            start = index + 1
+            level = len(_HEADING.match(line).group(1))
+            break
+    if start is None:
+        return []
+    items: list[str] = []
+    for line in lines[start:]:
+        heading = _HEADING.match(line)
+        # A deeper heading is part of this section; the same or a shallower one
+        # ends it, so the rest of the file is never swallowed.
+        if heading and len(heading.group(1)) <= level:
+            break
+        # A deeper heading is structure inside the section, not a thing to do.
+        # Without this it arrives on the board as an item reading "### detail".
+        if heading:
+            continue
+        if not line.strip():
+            continue
+        item = _strip_marker(line)
+        if item:
+            items.append(item)
+    return items
+
+
+def _next_from_todo(folder: Path) -> list[str]:
+    """Unchecked checklist items from TODO.md or TODO, else its plain list items."""
+    lines: list[str] | None = None
+    for name in ("TODO.md", "TODO"):
+        lines = _read_lines(folder / name)
+        if lines is not None:
+            break
+    if lines is None:
+        return []
+    unchecked: list[str] = []
+    plain: list[str] = []
+    for line in lines:
+        if not _LIST_MARKER.match(line):
+            continue
+        body = _LIST_MARKER.sub("", line, count=1).strip()
+        if _CHECKLIST.match(body):
+            # A checked box is done, so it is never offered as next work.
+            if not body.lower().startswith("[x]"):
+                unchecked.append(_CHECKLIST.sub("", body, count=1).strip())
+            continue
+        plain.append(_strip_marker(line))
+    # Unchecked items win when there are any; otherwise the plain list is the todo.
+    items = unchecked or plain
+    return [item for item in items if item]
+
+
+def _next_from_plan(folder: Path) -> list[str]:
+    """The newest plan's first heading, or its filename stem when it has none."""
+    plans = folder / "docs" / "superpowers" / "plans"
+    try:
+        if not plans.is_dir():
+            return []
+        # iterdir, not rglob: this runs on every shell session, and a recursive
+        # walk is how it stops being cheap.
+        candidates = [path for path in plans.iterdir() if path.suffix == ".md" and path.is_file()]
+        if not candidates:
+            return []
+        newest = max(candidates, key=lambda path: path.stat().st_mtime)
+    except (OSError, UnicodeDecodeError, ValueError):
+        return []
+    lines = _read_lines(newest)
+    if lines is not None:
+        for line in lines:
+            heading = _HEADING.match(line)
+            if heading:
+                text = line[len(heading.group(1)):].strip()
+                if text:
+                    return [text]
+    return [newest.stem]
+
+
+def project_next(folder: Path) -> tuple[list[str], str]:
+    """What the next work on this project looks like, and where it was read from.
+
+    Returns (items, source). source is "handover", "todo", "plan", or "" when
+    nothing answered. Never raises: an unreadable file degrades to the next
+    source, the same way git_info degrades to no-git.
+    """
+    try:
+        if not folder.is_dir():
+            return ([], "")
+    except (OSError, ValueError):
+        return ([], "")
+    for source, reader in (
+        ("handover", _next_from_handover),
+        ("todo", _next_from_todo),
+        ("plan", _next_from_plan),
+    ):
+        try:
+            items = reader(folder)
+        except (OSError, UnicodeDecodeError, ValueError):
+            items = []
+        if items:
+            return ([item[:NEXT_MAX_CHARS] for item in items[:NEXT_MAX_ITEMS]], source)
+    return ([], "")
+
+
 def _parse_stage_set_at(raw: object) -> datetime | None:
     if not isinstance(raw, str) or not raw:
         return None
@@ -298,6 +440,9 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
         missing = folder is None
         info = git_info(folder) if folder is not None else None
         has_git = info is not None
+        # A missing project has no folder to read, so it answers nothing rather
+        # than being asked.
+        next_items, next_source = project_next(folder) if folder is not None else ([], "")
         rows.append(
             Row(
                 name=name,
@@ -310,6 +455,10 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
                 subject=info["subject"] if info else "",
                 changed=info["changed"] if info else 0,
                 stage_set_at=stage_set_at,
+                recent=info["recent"] if info else [],
+                uncommitted=info["paths"] if info else [],
+                next_items=next_items,
+                next_source=next_source,
             )
         )
 
@@ -325,6 +474,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
             seen.add(child.name)
             info = git_info(child)
             has_git = info is not None
+            next_items, next_source = project_next(child)
             rows.append(
                 Row(
                     name=child.name,
@@ -336,6 +486,10 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
                     branch=info["branch"] if info else "",
                     subject=info["subject"] if info else "",
                     changed=info["changed"] if info else 0,
+                    recent=info["recent"] if info else [],
+                    uncommitted=info["paths"] if info else [],
+                    next_items=next_items,
+                    next_source=next_source,
                 )
             )
 
@@ -346,7 +500,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
 # The payload shape is owned here, not in the Worker: the Worker stores and
 # renders whatever it is given. Bump this when the shape changes, and redeploy
 # the Worker first, or it will refuse a version it does not know.
-PAYLOAD_VERSION = 1
+PAYLOAD_VERSION = 2
 
 
 def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
@@ -376,6 +530,14 @@ def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
                 "branch": row.branch,
                 "subject": row.subject,
                 "changed": row.changed,
+                # Additive on purpose: a later feature adds history fields with
+                # another additive bump rather than reshaping these.
+                "recent": [
+                    {"at": stamp(entry["at"]), "subject": entry["subject"][:120]}
+                    for entry in row.recent
+                ],
+                "uncommitted": [path[:120] for path in row.uncommitted],
+                "next": {"items": list(row.next_items), "source": row.next_source},
             }
             for row in rows
         ],

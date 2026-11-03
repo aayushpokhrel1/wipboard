@@ -343,16 +343,135 @@ def test_board_payload_shape():
                      flags=["no git"], has_git=False),
     ]
     p = wipboard.board_payload(rows, datetime(2026, 10, 20, 12, 5), "HOST")
-    assert p["version"] == 1
+    assert p["version"] == 2
     assert p["generated_at"] == "2026-10-20T12:05:00"
     assert p["host"] == "HOST"
     assert p["projects"][0] == {
         "name": "alpha", "stage": "building", "note": "n",
         "last_commit": "2026-10-20T12:00:00", "stage_set_at": "2026-10-01T09:00:00",
         "flags": ["!"], "has_git": True, "branch": "main", "subject": "s", "changed": 2,
+        "recent": [], "uncommitted": [], "next": {"items": [], "source": ""},
     }
     assert p["projects"][1]["last_commit"] is None
     assert p["projects"][1]["stage_set_at"] is None
+
+
+def test_project_next_reads_the_handover_next_section(tmp_path: Path) -> None:
+    """Catches the handover source not being read, or its markers surviving."""
+    (tmp_path / "HANDOVER.md").write_text(
+        "# State\n\n- not this one\n\n## Next\n\n- Ship the thing\n1. Then the other\n",
+        encoding="utf-8",
+    )
+
+    items, source = wipboard.project_next(tmp_path)
+
+    assert source == "handover"
+    assert items == ["Ship the thing", "Then the other"]
+
+
+def test_project_next_stops_at_the_next_same_or_shallower_heading(tmp_path: Path) -> None:
+    """Catches the section swallowing the rest of the file."""
+    (tmp_path / "HANDOVER.md").write_text(
+        "## Next\n\n- one\n\n## Later\n\n- two\n\n# Appendix\n\n- three\n",
+        encoding="utf-8",
+    )
+
+    items, source = wipboard.project_next(tmp_path)
+
+    assert source == "handover"
+    assert items == ["one"]
+
+
+def test_project_next_keeps_a_deeper_heading_inside_the_section(tmp_path: Path) -> None:
+    """Catches a deeper heading ending the section early."""
+    (tmp_path / "HANDOVER.md").write_text(
+        "## Next\n\n- one\n\n### detail\n\n- two\n\n## Later\n\n- three\n",
+        encoding="utf-8",
+    )
+
+    items, source = wipboard.project_next(tmp_path)
+
+    assert source == "handover"
+    assert items == ["one", "two"]
+
+
+def test_project_next_falls_through_to_unchecked_todo_items(tmp_path: Path) -> None:
+    """Catches TODO being ignored, or a checked item being offered as next work."""
+    (tmp_path / "TODO.md").write_text(
+        "- [x] done already\n- [ ] still to do\n- [ ] also to do\n",
+        encoding="utf-8",
+    )
+
+    items, source = wipboard.project_next(tmp_path)
+
+    assert source == "todo"
+    assert items == ["still to do", "also to do"]
+
+
+def test_project_next_returns_nothing_when_nothing_answers(tmp_path: Path) -> None:
+    """Catches an empty folder inventing a source."""
+    assert wipboard.project_next(tmp_path) == ([], "")
+
+
+def test_project_next_on_a_missing_folder_returns_nothing(tmp_path: Path) -> None:
+    """Catches a missing folder raising instead of answering nothing."""
+    assert wipboard.project_next(tmp_path / "nope") == ([], "")
+
+
+def test_project_next_caps_items_and_truncates_long_ones(tmp_path: Path) -> None:
+    """Catches the caps being dropped: they are a budget for the push body."""
+    # The long item goes FIRST. Written seventh it never survives the cap of
+    # four, so the truncation half of this test could never have run.
+    long_item = "x" * 200
+    (tmp_path / "HANDOVER.md").write_text(
+        "## Next\n\n"
+        + f"- {long_item}\n"
+        + "\n".join(f"- item{i}" for i in range(6))
+        + "\n",
+        encoding="utf-8",
+    )
+
+    items, source = wipboard.project_next(tmp_path)
+
+    assert source == "handover"
+    assert len(items) == 4
+    assert items[0] == "x" * 160
+    assert items[1] == "item0"
+
+
+def test_board_payload_carries_recent_uncommitted_and_next() -> None:
+    """Catches the v2 keys going missing or arriving in the wrong shape."""
+    rows = [
+        wipboard.Row(
+            name="alpha", stage="building", note="", last_commit=datetime(2026, 10, 20, 12, 0),
+            has_git=True,
+            recent=[{"at": datetime(2026, 10, 20, 12, 0), "subject": "s" * 200}],
+            uncommitted=["p" * 200],
+            next_items=["do the thing"],
+            next_source="handover",
+        ),
+    ]
+
+    p = wipboard.board_payload(rows, datetime(2026, 10, 20, 12, 5), "HOST")
+    project = p["projects"][0]
+
+    assert p["version"] == 2
+    assert project["recent"] == [{"at": "2026-10-20T12:00:00", "subject": "s" * 120}]
+    assert project["uncommitted"] == ["p" * 120]
+    assert project["next"] == {"items": ["do the thing"], "source": "handover"}
+
+
+def test_rows_carry_next_items_end_to_end(tmp_path: Path) -> None:
+    """Catches build_rows reading the handover but dropping what it found."""
+    now = wipboard.utc_now()
+    root = tmp_path / "root"
+    (root / "Alpha").mkdir(parents=True)
+    (root / "Alpha" / "HANDOVER.md").write_text("## Next\n\n- ship it\n", encoding="utf-8")
+
+    row = {row.name: row for row in wipboard.build_rows(_store(root, {}), now)}["Alpha"]
+
+    assert row.next_items == ["ship it"]
+    assert row.next_source == "handover"
 
 
 def test_push_without_config_exits_two_and_leaves_store_alone(
