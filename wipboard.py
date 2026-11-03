@@ -149,9 +149,53 @@ def git_info(repo: Path) -> dict | None:
         return None
     # One log call, not two: the subject rides along on the same invocation
     # because twenty repos times an extra process spawn is paid on every run.
-    raw = _git(repo, "log", "-1", "--format=%cI%n%s")
+    raw = _git(repo, "log", "-5", "--format=%cI%x1f%s%x1e")
     if raw is None:
         return None
+    
+    # Parse the recent commits
+    recent = []
+    for entry in raw.split("\x1e"):
+        if not entry.strip():
+            continue
+        stamp, _, subject = entry.partition("\x1f")
+        last_commit = _parse_commit_time(stamp)
+        if last_commit is not None:
+            recent.append({"at": last_commit, "subject": subject})
+    
+    # Extract up to 8 changed paths
+    status = _git(repo, "status", "--porcelain")
+    paths = []
+    if status:
+        for line in status.splitlines():
+            if len(paths) >= 8:
+                break
+            path = line[3:].strip()
+            if " -> " in path:
+                path = path.split(" -> ")[1].strip()
+            if path:
+                paths.append(path)
+    
+    # Keep existing behavior
+    branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD") or "?"
+    changed = len([line for line in (status or "").splitlines() if line.strip()])
+    ahead_raw = _git(repo, "rev-list", "--count", "@{u}..HEAD")
+    try:
+        ahead = int(ahead_raw) if ahead_raw else 0
+    except ValueError:
+        ahead = 0
+    
+    # Return the updated dict
+    return {
+        "last_commit": recent[0]["at"] if recent else None,
+        "branch": branch,
+        "dirty": bool(status),
+        "ahead": ahead,
+        "subject": recent[0]["subject"] if recent else "",
+        "changed": changed,
+        "recent": recent[:5],
+        "paths": paths[:8],
+    }
     # An empty subject yields one part, not two, so the second part defaults.
     stamp, _, subject = raw.partition("\n")
     last_commit = _parse_commit_time(stamp)
