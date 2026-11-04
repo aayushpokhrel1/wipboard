@@ -299,4 +299,7 @@ board, since every push is a full snapshot rather than a delta.
   `[System.IO.File]::WriteAllText($p, $json, (New-Object System.Text.UTF8Encoding $false))`.
 - **`uv tool install` copies the module, it does not link it.** After changing `wipboard.py`,
   run `uv tool install . --force` or the installed `wipboard` keeps running the old code. A
-  new subcommand appearing as "invalid choice" is this, every time.
+  new subcommand appearing as "invalid choice" is this, every time. After a `PAYLOAD_VERSION`
+  bump it shows up as `wipboard push` failing with **HTTP 400** against a Worker you just
+  deployed: the Worker is current, the CLI on `PATH` is not, and it is still sending the old
+  version. Reinstall before you go looking at the Worker. Hit on 2026-11-04 with v1 to v2.
