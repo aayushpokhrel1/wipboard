@@ -4,7 +4,7 @@ import { env, SELF } from "cloudflare:test";
 // authenticate like a browser would. They predate the view auth.
 const VIEW_COOKIE = { Cookie: "wipboard_view=view-token-for-tests" };
 import { describe, expect, it } from "vitest";
-import { renderBoard, type Board } from "../src/render";
+import { renderBoard, renderEmpty, type Board } from "../src/render";
 
 const NOW = new Date("2026-10-20T12:00:00Z");
 
@@ -131,10 +131,15 @@ describe("renderBoard", () => {
       }),
       NOW,
     );
-    // Three channels, only one of which is colour: the wax ring the class
-    // draws, the struck frame number, and the literal flag.
+    // Three channels, only one of which is colour: the struck stage, the
+    // struck frame number, and the literal flag.
     expect(html).toContain("suspect");
     expect(html).toContain('class="flag">!<');
+    // And the count at the top. The failure the author named for this page is
+    // one that looks calm when a third of the board is suspect, so the sheet
+    // says how many are before a single frame is read. Counted from the "!"
+    // flag, never from the in-flight split, which counts something else.
+    expect(html).toContain('class="alarm">1 of 2 suspect<');
     expect(html).toContain("<span>building</span> <b>1</b>");
     expect(html).toContain("<span>parked</span> <b>1</b>");
   });
@@ -195,5 +200,20 @@ describe("GET /", () => {
     const html = await res.text();
     expect(html).toContain("wipboard push");
     expect(html).not.toContain('class="row');
+  });
+});
+
+// A prose typo in the stylesheet is not a cosmetic problem. An unopened `*/`
+// in :root on 2026-11-04 made the CSS parser swallow the --wax declaration
+// that followed it, so the suspect strike vanished from the light scheme
+// while tsc and every other test stayed green; only a screenshot caught it.
+// This is the cheapest mechanical version of that screenshot.
+describe("the stylesheet", () => {
+  it("has no unbalanced comment delimiter eating the declaration after it", () => {
+    const html = renderEmpty();
+    const css = html.slice(html.indexOf("<style>") + 7, html.indexOf("</style>"));
+    expect(css.replace(/\/\*[\s\S]*?\*\//g, "")).not.toContain("*/");
+    // The one the bug ate, and the one the whole page's alarm is drawn in.
+    expect(css).toMatch(/:root\s*\{[\s\S]*?--wax:/);
   });
 });

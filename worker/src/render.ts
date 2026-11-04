@@ -238,6 +238,16 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
         )
         .join("")}</ol>`
     : "";
+  // What the phone's capped depth is not showing. Stated rather than silent:
+  // a block that quietly drops two of its four items is indistinguishable from
+  // a project that only had two. Hidden above 48rem, where nothing is capped.
+  const hidden = lead
+    ? [
+        nextItems.length > 2 ? `+${nextItems.length - 2} next` : "",
+        commits.length > 2 ? `+${commits.length - 2} recent` : "",
+      ].filter(Boolean)
+    : [];
+  const more = hidden.length ? `<p class="more">${escapeHtml(hidden.join(" · "))}</p>` : "";
   const git = project.has_git
     ? `<span class="branch">${escapeHtml(project.branch || "?")}</span>
         <span class="subject">${escapeHtml(project.subject)}</span>
@@ -262,6 +272,7 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
       <div class="caption">
         ${caption}
         ${log}
+        ${more}
         <p class="git">${git}</p>
       </div>
     </li>`;
@@ -276,14 +287,20 @@ const STYLE = `
   --ink: #11151a;
   --silver: #5d6671;
   /* The one saturated ink on the page. Grease pencil, and nothing else.
-     Anything here that is not a condition the data actually holds is grey. */
-  --wax: #c62f22;
+     Anything here that is not a condition the data actually holds is grey.
+
+     This is darker than a grease pencil really is, and it is measured rather
+     than chosen: the wax strike is a non-text mark and needs 3:1 against the
+     ground it is drawn on, which is any step of the ramp. #c62f22 was used
+     until 2026-11-02 and reached only 2.49:1 on d5, so the suspect mark was
+     at its weakest on the stalest frames, which are the likeliest to be
+     suspect. This clears 3.2:1 on d5 and 6.3:1 on the paper. */
+  --wax: #a8231a;
   --rebate: #ccd3da;
   /* The density ramp: six steps away from the paper, fresh to stale.
      The light scheme's dense end stops at a mid grey rather than going as dark
-     as the dark scheme's goes light. It is capped by the wax, not by taste:
-     the ring and the struck number are non-text marks and need 3:1 against the
-     ground they are drawn on, and a denser d5 than this fails that. */
+     as the dark scheme's goes light, so there is headroom under the wax and
+     under the single text ink at the dense end. Re-check both if d5 moves. */
   --d0: #e4e8ed;
   --d1: #dae0e7;
   --d2: #cdd5de;
@@ -348,6 +365,18 @@ body {
   color: var(--silver);
 }
 .age-note.stale { color: var(--wax); }
+/* The suspect count. Wax, and loud enough to be read from the same glance as
+   the stamp, but an order of magnitude below it: the snapshot's age still
+   outranks everything on this page. The word carries the condition; the colour
+   only agrees with it. */
+.alarm {
+  margin: .55rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--wax);
+}
 
 /* The tally down the rebate. A column of counts in one place, so where the
    mass sits is answered in the first viewport without reading a frame. */
@@ -373,22 +402,27 @@ body {
 /* The sheet is cut into two, and the cut is the page's main hierarchy: what
    you are inside leads, everything else follows. The label sits in the rebate
    as machine type, not as a title, because it is a caption on a sheet and not
-   a heading on a document. */
+   a heading on a document.
+
+   The label was silver at .7rem over a rebate rule until 2026-11-02, which is
+   exactly the edge strip's own treatment, so the second section read as the
+   sheet continuing rather than as a second sheet. It is the same machine type,
+   at full ink over an ink rule, with air above it that no other rule has. */
 .section {
   display: flex;
   align-items: baseline;
   gap: .6rem;
-  margin: 1.6rem 0 .5rem;
+  margin: 2.5rem 0 .6rem;
   padding-bottom: .35rem;
-  border-bottom: 1px solid var(--rebate);
+  border-bottom: 1px solid var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
-  font-weight: 400;
+  font-size: .78rem;
+  font-weight: 700;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--silver);
+  color: var(--ink);
 }
-.section span { margin-left: auto; color: var(--ink); font-weight: 700; }
+.section span { margin-left: auto; color: var(--silver); font-weight: 400; }
 
 .sheet {
   margin: 0;
@@ -408,7 +442,15 @@ body {
   text-transform: uppercase;
   opacity: .75;
 }
-.next ul { margin: .15rem 0 0; padding-left: .9rem; }
+/* The list marker is drawn, not inherited. A page that themes its selection,
+   its scrollbar, its focus ring and its underlines should not leave its one
+   list marker to the browser, which rendered these as hollow rings inside the
+   sheet (a nested ul) and as filled discs on the project page (a top-level
+   one). A small hollow ring is also uncomfortably close to the wax ring the
+   author rejected. A dash, hung outside the text, in both places. */
+.next ul, .next-full { list-style: none; margin: .15rem 0 0; padding-left: 0; }
+.next li, .next-full li { padding-left: .95rem; text-indent: -.95rem; }
+.next li::before, .next-full li::before { content: "-\\00a0"; color: var(--silver); }
 .next li { font-size: .82rem; line-height: 1.3; margin-top: .12rem; overflow-wrap: anywhere; }
 /* The recent commit sequence. One subject tells you nothing; four read in
    order tell you whether this is being built, documented or nursed. */
@@ -423,6 +465,22 @@ body {
 }
 .log .when { flex: 0 0 2.6rem; text-align: right; }
 .log .what { overflow-wrap: anywhere; }
+/* The phone caps a lead frame's depth at two of each. Six lead frames at four
+   next items and four commits put roughly 3000px between the exposure stamp
+   and "the rest", which is the vertical stack of status cards this page was
+   redesigned to stop being, on the one device it is most often read on. The
+   cap is stated by the .more line, and the full depth is one tap away on the
+   project's own page. Nothing is capped at 48rem and above. */
+.sheet-lead .next li:nth-child(n+3),
+.sheet-lead .log li:nth-child(n+3) { display: none; }
+.more {
+  margin: .3rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--silver);
+}
 .cell { break-inside: avoid; margin-bottom: .5rem; }
 .frame {
   position: relative;
@@ -483,10 +541,30 @@ body {
    unmissable and it was too much: six rings on nineteen frames read as damage
    rather than as a flag, and the ring said "something is wrong here" where the
    strike says the specific thing that is wrong. Do not bring the ring back
-   without re-reading what the "!" actually means. */
+   without re-reading what the "!" actually means.
+
+   The stroke is drawn rather than a browser line-through: a tidy machine rule
+   through a word is not a grease pencil, and the whole point of this world is
+   that the marks on it were made by hand. One pseudo-element, two degrees off
+   axis, overhanging the word at both ends.
+
+   The number is struck only on the sheet. The project page reuses .num for the
+   branch name, where a wax line through "main" reads as "this branch is gone"
+   rather than as "this stage may be a lie". */
 .frame.suspect .stage,
-.frame.suspect .num {
-  text-decoration: line-through 2px var(--wax);
+.sheet .frame.suspect .num {
+  position: relative;
+}
+.frame.suspect .stage::after,
+.sheet .frame.suspect .num::after {
+  content: "";
+  position: absolute;
+  left: -.18em;
+  right: -.18em;
+  top: 46%;
+  height: 2px;
+  background: var(--wax);
+  transform: rotate(-1.8deg);
 }
 
 /* Links. The page was read-only and link-free until 2026-11-02; a frame's name
@@ -516,10 +594,11 @@ a:focus-visible { outline: 2px solid var(--wax); outline-offset: 2px; }
   text-transform: uppercase;
   color: var(--silver);
 }
-.next-full { margin: 0; padding-left: 1.1rem; }
+.next-full { margin: 0; }
 .next-full li { margin-top: .3rem; line-height: 1.4; overflow-wrap: anywhere; }
-.paths { margin: 0; padding-left: 1.1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
-.paths li { margin-top: .15rem; overflow-wrap: anywhere; }
+.paths { list-style: none; margin: 0; padding-left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
+.paths li { margin-top: .15rem; padding-left: .95rem; text-indent: -.95rem; overflow-wrap: anywhere; }
+.paths li::before { content: "-\\00a0"; color: var(--silver); }
 .provenance, .absent { margin: .45rem 0 0; font-size: .8rem; color: var(--silver); }
 .single .log { font-size: .78rem; }
 .single .log li { font-size: .78rem; }
@@ -593,6 +672,9 @@ code {
   .sheet { columns: 3; column-gap: .65rem; }
   .sheet-lead { columns: 2; }
   .cell { margin-bottom: .65rem; }
+  .sheet-lead .next li:nth-child(n+3) { display: list-item; }
+  .sheet-lead .log li:nth-child(n+3) { display: flex; }
+  .more { display: none; }
 }
 @media (min-width: 70rem) {
   body { max-width: 86rem; margin: 0 auto; }
@@ -619,7 +701,12 @@ ${body}
 // The sheet's margin strip plus the exposure stamp. Shared by every state of
 // the page so a reader always knows how old what they are looking at is, even
 // when there is nothing to look at.
-function sheetHead(age: { text: string; tone: string; note: string }, host: string, tally: string): string {
+function sheetHead(
+  age: { text: string; tone: string; note: string },
+  host: string,
+  tally: string,
+  alarm = "",
+): string {
   return `<header>
   <div class="edge">
     <h1>wipboard</h1>
@@ -630,6 +717,7 @@ function sheetHead(age: { text: string; tone: string; note: string }, host: stri
     <div class="aged">
       <p class="age ${age.tone}">${escapeHtml(age.text)}</p>
       ${age.note ? `<p class="age-note ${age.tone}">${escapeHtml(age.note)}</p>` : ""}
+      ${alarm}
     </div>
     ${tally}
   </div>
@@ -644,6 +732,18 @@ export function renderBoard(payload: Board, now: Date): string {
     .map(([stage, count]) => `<li><span>${escapeHtml(stage)}</span> <b>${escapeHtml(String(count))}</b></li>`)
     .join("");
   const tally = counts ? `<ul class="tally">${counts}</ul>` : "";
+  // How many frames are lying to you, counted once at the top. The failure the
+  // author named for this page is one that looks calm when a third of the board
+  // is suspect, and after the wax ring was dropped that fact was carried only
+  // by small strikes scattered down the sheet. The number is not a second
+  // channel for the flag: it is the one place the sheet's own shape is stated
+  // rather than seen. It is not WORKING ON, which counts something else.
+  const suspects = payload.projects.filter((project) => project.flags.includes("!")).length;
+  const alarm = suspects
+    ? `<p class="alarm">${escapeHtml(String(suspects))} of ${escapeHtml(
+        String(payload.projects.length),
+      )} suspect</p>`
+    : "";
   // Payload order is _sort_key order from the CLI. Re-sorting here would make
   // the two views disagree about what matters, which is worse than one view.
   //
@@ -665,7 +765,7 @@ export function renderBoard(payload: Board, now: Date): string {
 ${entries.map(({ project, index }) => renderFrame(project, index, nowMs, isLead)).join("\n")}
 </ol>`
       : "";
-  const body = `${sheetHead(age, payload.host, tally)}
+  const body = `${sheetHead(age, payload.host, tally, alarm)}
 ${section(lead, "working on", true)}
 ${section(rest, "the rest", false)}`;
   return page("wipboard", body);
