@@ -485,8 +485,11 @@ body {
 .frame {
   position: relative;
   padding: .45rem .55rem .5rem;
-  background: var(--d0);
 }
+/* Every frame gets exactly one of these: density() returns 0 to 5, or -1 for
+   dx. There is deliberately no base background to fall back on, because the
+   fallback was d0 and a frame that lost its class would have printed as fresh,
+   which is the one lie this page cannot tell. */
 .frame.d0 { background: var(--d0); }
 .frame.d1 { background: var(--d1); }
 .frame.d2 { background: var(--d2); }
@@ -527,9 +530,10 @@ body {
 }
 /* Flags are ink at full weight, not wax. Wax text inside a frame has to clear
    contrast against all six density steps and does not at the dense end, and
-   the alarm is already carried by the ring, the struck number and the word
-   itself. The wax stays where its ground is known: the ring, the strike, and
-   the stale stamp on the paper. */
+   the alarm is already carried by the struck stage, the struck number and the
+   word itself. The wax stays where its ground is known: the strike, the
+   suspect count, and the stale stamp, all of which are drawn on the paper or
+   measured against every step of the ramp. */
 .flag { font-weight: 700; }
 
 /* The grease pencil. A suspect frame is one whose stage may be a lie, so the

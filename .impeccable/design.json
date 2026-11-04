@@ -1,308 +1,217 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-31T00:00:00Z",
+  "generatedAt": "2026-11-04T00:00:00Z",
   "title": "Design System: wipboard",
-  "supersededBy": "docs/superpowers/specs/2026-11-01-dashboard-redesign.md",
-  "status": "documents the outgoing implementation; a redesign is approved and not yet built",
   "extensions": {
+    "scope": "worker/src/render.ts only. The whole system is one inline STYLE constant in that file. The CLI's terminal table is deliberately undocumented.",
     "colorMeta": {
-      "alarm": {
-        "role": "primary",
-        "displayName": "Alarm Red",
-        "canonical": "#b42318",
-        "darkCounterpart": "alarm-dark",
-        "tonalRamp": [
-          "oklch(20% 0.09 27)",
-          "oklch(30% 0.13 27)",
-          "oklch(40% 0.16 27)",
-          "oklch(50% 0.18 27)",
-          "oklch(60% 0.17 27)",
-          "oklch(72% 0.14 27)",
-          "oklch(85% 0.08 27)",
-          "oklch(95% 0.03 27)"
-        ]
-      },
-      "fresh": {
-        "role": "secondary",
-        "displayName": "Fresh Green",
-        "canonical": "#1a7f37",
-        "darkCounterpart": "fresh-dark",
-        "tonalRamp": [
-          "oklch(20% 0.07 148)",
-          "oklch(30% 0.10 148)",
-          "oklch(40% 0.12 148)",
-          "oklch(50% 0.14 148)",
-          "oklch(62% 0.16 148)",
-          "oklch(74% 0.13 148)",
-          "oklch(86% 0.08 148)",
-          "oklch(95% 0.03 148)"
-        ]
-      },
-      "warn": {
-        "role": "tertiary",
-        "displayName": "Amber Warn",
-        "canonical": "#9a6700",
-        "darkCounterpart": "warn-dark",
-        "tonalRamp": [
-          "oklch(20% 0.05 80)",
-          "oklch(30% 0.07 80)",
-          "oklch(40% 0.09 80)",
-          "oklch(51% 0.11 80)",
-          "oklch(63% 0.13 80)",
-          "oklch(76% 0.13 80)",
-          "oklch(87% 0.08 80)",
-          "oklch(96% 0.03 80)"
-        ]
+      "paper": {
+        "role": "neutral",
+        "displayName": "Unexposed Paper",
+        "canonical": "#eef1f4",
+        "darkValue": "#0b0d10",
+        "purpose": "The page behind everything, and the colour showing through the gap between frames.",
+        "tonalRamp": ["#11151a", "#2a313b", "#495360", "#6b7684", "#9aa5b2", "#ccd3da", "#eef1f4", "#f8fafb"]
       },
       "ink": {
         "role": "neutral",
-        "displayName": "Ink",
-        "canonical": "#1a1a1a",
-        "darkCounterpart": "ink-dark",
-        "tonalRamp": [
-          "oklch(15% 0 0)",
-          "oklch(25% 0 0)",
-          "oklch(35% 0 0)",
-          "oklch(45% 0 0)",
-          "oklch(58% 0 0)",
-          "oklch(70% 0 0)",
-          "oklch(84% 0 0)",
-          "oklch(95% 0 0)"
-        ]
+        "displayName": "Full Ink",
+        "canonical": "#11151a",
+        "darkValue": "#e8edf2",
+        "purpose": "The single text colour inside a frame, the wordmark, the tally counts, the section rule.",
+        "tonalRamp": ["#05070a", "#11151a", "#232a33", "#3a434e", "#5d6671", "#8a95a3", "#ccd3da", "#eef1f4"]
       },
-      "ink-muted": {
+      "silver": {
         "role": "neutral",
-        "displayName": "Muted Ink",
-        "canonical": "#57606a",
-        "darkCounterpart": "ink-muted-dark",
-        "tonalRamp": [
-          "oklch(18% 0.012 255)",
-          "oklch(28% 0.015 255)",
-          "oklch(38% 0.018 255)",
-          "oklch(48% 0.020 255)",
-          "oklch(60% 0.018 255)",
-          "oklch(72% 0.014 255)",
-          "oklch(85% 0.009 255)",
-          "oklch(95% 0.004 255)"
-        ]
+        "displayName": "Silver",
+        "canonical": "#5d6671",
+        "darkValue": "#8a95a3",
+        "purpose": "The tier that exists only outside a frame, where the ground is always the paper: edge strip, tally labels, age note, captions, commit log, list dashes.",
+        "tonalRamp": ["#171b20", "#2b313a", "#424a55", "#5d6671", "#737e8b", "#a3acb8", "#c9d0d8", "#e8ebef"]
       },
-      "border": {
-        "role": "neutral",
-        "displayName": "Hairline",
-        "canonical": "#d0d7de",
-        "darkCounterpart": "border-dark",
-        "tonalRamp": [
-          "oklch(18% 0.010 240)",
-          "oklch(28% 0.012 240)",
-          "oklch(40% 0.014 240)",
-          "oklch(52% 0.015 240)",
-          "oklch(66% 0.014 240)",
-          "oklch(79% 0.012 240)",
-          "oklch(88% 0.008 240)",
-          "oklch(96% 0.004 240)"
-        ]
-      },
-      "surface-page": {
-        "role": "neutral",
-        "displayName": "Paper",
-        "canonical": "#fafafa",
-        "darkCounterpart": "surface-page-dark",
-        "tonalRamp": [
-          "oklch(15% 0.004 250)",
-          "oklch(23% 0.005 250)",
-          "oklch(34% 0.005 250)",
-          "oklch(47% 0.005 250)",
-          "oklch(61% 0.004 250)",
-          "oklch(76% 0.003 250)",
-          "oklch(89% 0.002 250)",
-          "oklch(98% 0.001 250)"
-        ]
-      },
-      "chip": {
-        "role": "neutral",
-        "displayName": "Chip Grey",
-        "canonical": "#eaeef2",
-        "darkCounterpart": "chip-dark",
-        "tonalRamp": [
-          "oklch(17% 0.008 245)",
-          "oklch(27% 0.010 245)",
-          "oklch(39% 0.011 245)",
-          "oklch(51% 0.011 245)",
-          "oklch(65% 0.010 245)",
-          "oklch(78% 0.008 245)",
-          "oklch(90% 0.006 245)",
-          "oklch(97% 0.003 245)"
-        ]
-      },
-      "alarm-wash": {
+      "wax": {
         "role": "primary",
-        "displayName": "Alarm Wash",
-        "canonical": "#fff5f4",
-        "darkCounterpart": "alarm-wash-dark",
-        "tonalRamp": [
-          "oklch(20% 0.04 25)",
-          "oklch(30% 0.05 25)",
-          "oklch(42% 0.05 25)",
-          "oklch(55% 0.05 25)",
-          "oklch(68% 0.04 25)",
-          "oklch(80% 0.03 25)",
-          "oklch(91% 0.02 25)",
-          "oklch(98% 0.008 25)"
-        ]
+        "displayName": "Grease Pencil Wax",
+        "canonical": "#a8231a",
+        "darkValue": "#ff6250",
+        "purpose": "The only saturated ink on the page. Condition and nothing else: the suspect strike, the suspect count, a stale exposure stamp, the focus ring, the selection highlight.",
+        "measured": "Light value is measured, not chosen: the strike is a non-text mark needing 3:1 against any ramp step. Clears 3.2:1 on d5 and 6.3:1 on the paper. The previous #c62f22 reached only 2.49:1 on d5.",
+        "tonalRamp": ["#2e0906", "#4d100b", "#6e1812", "#8d1d15", "#a8231a", "#d14034", "#ff6250", "#ffb0a6"]
+      },
+      "rebate": {
+        "role": "neutral",
+        "displayName": "Rebate Hairline",
+        "canonical": "#ccd3da",
+        "darkValue": "#2a313b",
+        "purpose": "The 1px hairline: edge strip underline, block rules, the inset outline on an unexposed frame and on panels, the underline under a frame name, the fill behind inline code.",
+        "tonalRamp": ["#141820", "#2a313b", "#414a56", "#5f6a77", "#8d97a3", "#aeb7c0", "#ccd3da", "#e6eaee"]
+      },
+      "density-ramp": {
+        "role": "neutral",
+        "displayName": "The Density Ramp",
+        "canonical": "#e4e8ed",
+        "purpose": "A frame's ground, set by days since its last commit: d0 under 1d, d1 under 3d, d2 under 7d, d3 under 30d, d4 under 90d, d5 beyond. Fixed steps, never computed from the current board. A frame with no git prints as dx: transparent paper with a rebate outline.",
+        "tonalRamp": ["#e4e8ed", "#dae0e7", "#cdd5de", "#bfc8d3", "#b2bcc8", "#a6b0bb"],
+        "darkRamp": ["#11141a", "#171c24", "#1f252f", "#28303c", "#323b49", "#3d4757"]
       }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Display",
-        "purpose": "The snapshot age, and nothing else. The largest element on the page by a wide margin."
-      },
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "The wipboard wordmark in the header. Deliberately smaller than the age beneath it."
-      },
-      "title": {
-        "displayName": "Title",
-        "purpose": "A project name. Rises to weight 700 on a suspect row."
-      },
-      "body": {
-        "displayName": "Body",
-        "purpose": "The freeform note and the prose in the empty and version-mismatch panels."
-      },
-      "label": {
-        "displayName": "Label",
-        "purpose": "Stage name (uppercased), stage-count chips, the git line. Metadata sits one step up at 0.85rem."
-      },
-      "mono": {
-        "displayName": "Mono",
-        "purpose": "Machine text only: a branch name, or a command the reader must type."
-      }
+      "display": { "displayName": "Exposure Stamp", "purpose": "The snapshot's age, and nothing else, on any surface. The largest element on every page by a wide margin." },
+      "count": { "displayName": "Suspect Count", "purpose": "The one line stating how many frames are lying to you. An order of magnitude below the stamp." },
+      "headline": { "displayName": "Section Label", "purpose": "The two section labels, full ink over an ink rule." },
+      "title": { "displayName": "Project Name", "purpose": "A project name in the device's UI face. 1.4rem on a project's own page." },
+      "body": { "displayName": "Human Text", "purpose": "Notes, next items, panel prose. The UI face, because a human wrote it." },
+      "label": { "displayName": "Edge Code", "purpose": "Edge strip, tally, back link, project-page block rules. Machine type as measurement." },
+      "meta": { "displayName": "Frame Furniture", "purpose": "Frame head (number, stage), metadata line, git line." },
+      "micro": { "displayName": "Micro Label", "purpose": "The next label and the stated-cap line." },
+      "mono": { "displayName": "Commit Log", "purpose": "The recent-commit sequence. .78rem on a project page." }
     },
-    "shadows": [],
-    "motion": [],
-    "breakpoints": [
-      { "name": "wide", "value": "40rem" },
-      { "name": "measure", "value": "52rem" }
+    "shadows": [
+      {
+        "name": "rebate-outline",
+        "value": "inset 0 0 0 1px #ccd3da",
+        "purpose": "The only box-shadow in the system, used twice: an unexposed (dx) frame and the empty / mismatch / missing panel. It is a hairline border drawn inside the box, never elevation. Dark: inset 0 0 0 1px #2a313b."
+      }
     ],
-    "notes": {
-      "shadows": "Deliberately empty. There is no box-shadow anywhere in the stylesheet; depth is tone plus a 1px hairline. Recorded as current state, not an invariant: the author chose 'flat now, shadows allowed later' on 2026-10-31.",
-      "motion": "Deliberately empty. There is not one transition, animation or fade in the system. A page read for four seconds has nothing to animate.",
-      "source": "The entire design system is one inline STYLE constant in worker/src/render.ts. There is no stylesheet, no build step and no framework."
-    }
+    "motion": [
+      {
+        "name": "develop",
+        "value": "develop 520ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i) * 22ms)",
+        "purpose": "The only animation in the system. Frames rise to their density once, staggered down the sheet, from an already-visible default (@keyframes develop { from { background-color: var(--paper); } }). Only the ground moves, so every word is readable from the first frame. Wrapped in @media (prefers-reduced-motion: no-preference)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "two-up", "value": "22rem", "purpose": "The sheet goes to 2 columns; the lead section stays at 1. Below the narrowest phone still shipping, so every phone gets two columns." },
+      { "name": "desk", "value": "48rem", "purpose": "3 columns (lead 2), wider body padding, and the lead frames' depth cap is lifted; the +N more line is hidden." },
+      { "name": "wide", "value": "70rem", "purpose": "4 columns (lead 3), body capped at 86rem and centred." }
+    ]
   },
   "components": [
     {
-      "name": "Card Row",
-      "kind": "card",
-      "refersTo": "card-row",
-      "description": "One project on the board: name and stage, a wrapping metadata line, an optional note, and a git line. Not interactive.",
-      "html": "<li class=\"ds-row\"><div class=\"ds-row-head\"><span class=\"ds-row-name\">budgerr</span><span class=\"ds-row-stage\">spec</span></div><div class=\"ds-row-meta\"><span>touched 3d</span><span>12d in stage</span></div><p class=\"ds-row-note\">waiting on an API key</p><div class=\"ds-row-git\"><span class=\"ds-row-branch\">main</span><span>tighten the import guard</span><span>2 changed</span></div></li>",
-      "css": ".ds-row { list-style: none; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: .6rem .7rem; font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: #1a1a1a; } .ds-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; } .ds-row-name { font-size: 1.05rem; font-weight: 600; overflow-wrap: anywhere; } .ds-row-stage { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #57606a; } .ds-row-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .2rem; font-size: .85rem; color: #57606a; } .ds-row-note { margin: .4rem 0 0; overflow-wrap: anywhere; } .ds-row-git { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .3rem; font-size: .8rem; color: #57606a; } .ds-row-branch { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; } @media (prefers-color-scheme: dark) { .ds-row { background: #161b22; border-color: #30363d; color: #e6edf3; } .ds-row-stage, .ds-row-meta, .ds-row-git { color: #8b949e; } }"
-    },
-    {
-      "name": "Card Row (suspect)",
-      "kind": "card",
-      "refersTo": "card-row-suspect",
-      "description": "A row whose recorded stage may be a lie, because commits landed after the stage was last set. Three signals at once: a 6px red left edge, a tinted background, and a heavier name.",
-      "html": "<li class=\"ds-row ds-row-suspect\"><div class=\"ds-row-head\"><span class=\"ds-row-name\">wipboard</span><span class=\"ds-row-stage\">building</span></div><div class=\"ds-row-meta\"><span>touched just now</span><span>41d in stage</span><span class=\"ds-flag\">!</span><span class=\"ds-flag\">stuck 41d</span><span class=\"ds-flag\">dirty</span></div></li>",
-      "css": ".ds-row { list-style: none; background: #fff; border: 1px solid #d0d7de; border-radius: 8px; padding: .6rem .7rem; font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: #1a1a1a; } .ds-row-suspect { border-left: 6px solid #b42318; background: #fff5f4; } .ds-row-suspect .ds-row-name { font-weight: 700; } .ds-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; } .ds-row-name { font-size: 1.05rem; font-weight: 600; overflow-wrap: anywhere; } .ds-row-stage { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #57606a; } .ds-row-meta { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .2rem; font-size: .85rem; color: #57606a; } .ds-flag { font-weight: 700; color: #b42318; } @media (prefers-color-scheme: dark) { .ds-row { background: #161b22; border-color: #30363d; color: #e6edf3; } .ds-row-suspect { border-left-color: #ff7b72; background: #2d1618; } .ds-row-stage, .ds-row-meta { color: #8b949e; } .ds-flag { color: #ff7b72; } }"
-    },
-    {
-      "name": "Age Header",
+      "name": "Exposure Stamp",
       "kind": "custom",
-      "refersTo": "age-stale",
-      "description": "The signature component. The snapshot's own age, set larger than the wordmark, in one of three tones, always paired with words when the news is bad.",
-      "html": "<header class=\"ds-header\"><h1 class=\"ds-wordmark\">wipboard</h1><p class=\"ds-age ds-age-stale\">2d ago</p><p class=\"ds-age-note ds-age-note-stale\">This machine has probably been off. Nothing has been pushed since.</p><p class=\"ds-host\">pavilion</p><ul class=\"ds-stages\"><li>building 6</li><li>spec 4</li><li>shipped 3</li></ul></header>",
-      "css": ".ds-header { font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: #1a1a1a; margin-bottom: 1rem; } .ds-wordmark { font-size: 1.1rem; margin: 0 0 .25rem; letter-spacing: .02em; } .ds-age { font-size: 1.6rem; font-weight: 700; margin: 0; } .ds-age-fresh { color: #1a7f37; } .ds-age-warn { color: #9a6700; } .ds-age-stale { color: #b42318; } .ds-age-note { margin: .25rem 0 0; font-size: .9rem; } .ds-age-note-stale { color: #b42318; font-weight: 600; } .ds-host { margin: .25rem 0 0; font-size: .85rem; color: #57606a; } .ds-stages { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; padding: 0; list-style: none; } .ds-stages li { font-size: .8rem; padding: .1rem .45rem; border-radius: 999px; background: #eaeef2; } @media (prefers-color-scheme: dark) { .ds-header { color: #e6edf3; } .ds-age-fresh { color: #3fb950; } .ds-age-warn { color: #e3b341; } .ds-age-stale, .ds-age-note-stale { color: #ff7b72; } .ds-host { color: #8b949e; } .ds-stages li { background: #21262d; } }"
+      "refersTo": "exposure-stamp",
+      "description": "The snapshot's age, the loudest element on every surface. Three ink weights on one ink, never rendered without its plain-language note.",
+      "html": "<div class=\"ds-stamp\"><p class=\"ds-age ds-age-stale\">5d ago</p><p class=\"ds-age-note ds-age-note-stale\">Nothing has been pushed since. Every frame below is at least this old.</p><p class=\"ds-alarm\">7 of 19 suspect</p></div>",
+      "css": ".ds-stamp { background: #eef1f4; padding: .9rem .9rem 1rem; font-variant-numeric: tabular-nums; } .ds-age { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(2.3rem, 13vw, 3.4rem); font-weight: 700; line-height: .95; letter-spacing: -.035em; color: #5d6671; } .ds-age-warn { color: #11151a; } .ds-age-stale { color: #a8231a; } .ds-age-note { margin: .5rem 0 0; max-width: 34ch; font: 400 .88rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #5d6671; } .ds-age-note-stale { color: #a8231a; } .ds-alarm { margin: .55rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.05rem; font-weight: 700; letter-spacing: .02em; color: #a8231a; }"
     },
     {
-      "name": "Stage Chip",
-      "kind": "chip",
-      "refersTo": "chip-stage",
-      "description": "A stage name and how many projects sit in it. A count, never a filter: the page is read-only.",
-      "html": "<ul class=\"ds-stages\"><li>idea 2</li><li>building 6</li><li>testing 1</li><li>parked 5</li></ul>",
-      "css": ".ds-stages { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; } .ds-stages li { font-size: .8rem; letter-spacing: .04em; padding: .1rem .45rem; border-radius: 999px; background: #eaeef2; color: #1a1a1a; } @media (prefers-color-scheme: dark) { .ds-stages li { background: #21262d; color: #e6edf3; } }"
+      "name": "Edge Strip",
+      "kind": "nav",
+      "refersTo": "edge-strip",
+      "description": "The sheet's margin: wordmark, sheet descriptor, host pushed to the right edge, over a rebate hairline. Machine type as measurement.",
+      "html": "<div class=\"ds-edge\"><h1>wipboard</h1><span>contact sheet</span><span class=\"ds-host\">yusha</span></div>",
+      "css": ".ds-edge { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: baseline; padding-bottom: .5rem; border-bottom: 1px solid #ccd3da; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: #5d6671; background: #eef1f4; } .ds-edge h1 { font: inherit; margin: 0; color: #11151a; } .ds-edge .ds-host { margin-left: auto; }"
     },
     {
-      "name": "Flag",
+      "name": "Stage Tally",
       "kind": "custom",
-      "refersTo": "flag",
-      "description": "The CLI's own flag strings, reproduced verbatim so the terminal and the page never need translating. Words first, colour second.",
-      "html": "<div class=\"ds-flags\"><span class=\"ds-flag\">!</span><span class=\"ds-flag\">stuck 41d</span><span class=\"ds-flag\">dirty</span><span class=\"ds-flag\">^3</span></div>",
-      "css": ".ds-flags { display: flex; flex-wrap: wrap; gap: .4rem; font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; font-size: .85rem; } .ds-flag { font-weight: 700; color: #b42318; } @media (prefers-color-scheme: dark) { .ds-flag { color: #ff7b72; } }"
+      "refersTo": "tally",
+      "description": "A column of stage counts in the CLI's fixed cycle order, so the rows never move and the counts stay comparable. Counts only, never filters.",
+      "html": "<ul class=\"ds-tally\"><li><span>idea</span> <b>2</b></li><li><span>building</span> <b>9</b></li><li><span>shipped</span> <b>6</b></li><li><span>parked</span> <b>2</b></li></ul>",
+      "css": ".ds-tally { margin: 0; padding: .5rem; list-style: none; background: #eef1f4; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #5d6671; font-variant-numeric: tabular-nums; } .ds-tally li { display: flex; gap: .6rem; justify-content: space-between; padding: .1rem 0; } .ds-tally b { color: #11151a; font-weight: 700; }"
+    },
+    {
+      "name": "Section Rule",
+      "kind": "custom",
+      "refersTo": "section-rule",
+      "description": "The cut between 'working on' and 'the rest'. Machine type at full ink over an ink rule, with air above it that no other rule has.",
+      "html": "<h2 class=\"ds-section\">working on <span>6</span></h2>",
+      "css": ".ds-section { display: flex; align-items: baseline; gap: .6rem; margin: 2.5rem 0 .6rem; padding-bottom: .35rem; border-bottom: 1px solid #11151a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #11151a; } .ds-section span { margin-left: auto; color: #5d6671; font-weight: 400; }"
+    },
+    {
+      "name": "Frame",
+      "kind": "card",
+      "refersTo": "frame",
+      "description": "The sheet's unit. Square, borderless, printed at a ground set by recency. The furniture is identical and in the same positions in every frame.",
+      "html": "<li class=\"ds-cell\" style=\"--i:1\"><div class=\"ds-frame ds-d1\"><div class=\"ds-head\"><span class=\"ds-num\">02</span><span class=\"ds-stage\">building</span></div><p class=\"ds-name\"><a href=\"#\">Portfolio</a></p><p class=\"ds-meta\"><span>23d</span><span>32d in stage</span><span class=\"ds-flag\">stuck 32d</span><span class=\"ds-flag\">dirty</span></p></div><div class=\"ds-caption\"><p class=\"ds-note\">static site, uncommitted changes</p><p class=\"ds-git\"><span class=\"ds-branch\">main</span><span class=\"ds-subject\">docs: fix the entry shape so it stops drifting</span><span>2 changed</span></p></div></li>",
+      "css": ".ds-cell { list-style: none; break-inside: avoid; margin-bottom: .5rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; color: #11151a; } .ds-frame { position: relative; padding: .45rem .55rem .5rem; background: #e4e8ed; } .ds-d1 { background: #dae0e7; } .ds-d3 { background: #bfc8d3; } .ds-d5 { background: #a6b0bb; } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; } .ds-name a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; text-decoration-color: #ccd3da; } .ds-name a:hover { text-decoration-thickness: 2px; } .ds-name a:focus-visible { outline: 2px solid #a8231a; outline-offset: 2px; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .02em; } .ds-flag { font-weight: 700; } .ds-caption { padding: .25rem .1rem 0 .55rem; } .ds-note { margin: 0; font-size: .82rem; line-height: 1.35; overflow-wrap: anywhere; } .ds-git { display: flex; flex-wrap: wrap; gap: 0 .5rem; margin: .15rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; color: #5d6671; } .ds-branch { color: #11151a; } .ds-subject { overflow-wrap: anywhere; }"
+    },
+    {
+      "name": "Frame, suspect",
+      "kind": "card",
+      "refersTo": "frame-d5",
+      "description": "A frame whose stage may be a lie, printed dense. Three channels, only one of which is colour: the struck stage, the struck frame number, and the literal ! among the flags. The strike is drawn, two degrees off axis, overhanging the word at both ends.",
+      "html": "<div class=\"ds-frame ds-d5 ds-suspect\"><div class=\"ds-head\"><span class=\"ds-num\">05</span><span class=\"ds-stage\">shipped</span></div><p class=\"ds-name\">Chess_Coach</p><p class=\"ds-meta\"><span>1d</span><span>32d in stage</span><span class=\"ds-flag\">!</span><span class=\"ds-flag\">stuck 32d</span></p></div>",
+      "css": ".ds-frame { position: relative; padding: .45rem .55rem .5rem; background: #e4e8ed; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; color: #11151a; } .ds-d5 { background: #a6b0bb; } .ds-suspect .ds-stage, .ds-suspect .ds-num { position: relative; } .ds-suspect .ds-stage::after, .ds-suspect .ds-num::after { content: ''; position: absolute; left: -.18em; right: -.18em; top: 46%; height: 2px; background: #a8231a; transform: rotate(-1.8deg); } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .02em; } .ds-flag { font-weight: 700; }"
+    },
+    {
+      "name": "Frame, unexposed",
+      "kind": "card",
+      "refersTo": "frame-unexposed",
+      "description": "A project with no git, or a repo with no commits. Paper with a rebate outline rather than a density: its age is unknown, not late, and printing it as stale would be a guess.",
+      "html": "<div class=\"ds-frame ds-dx\"><div class=\"ds-head\"><span class=\"ds-num\">17</span><span class=\"ds-stage\">idea</span></div><p class=\"ds-name\">scratch-notes</p><p class=\"ds-meta\"><span>-</span><span>32d in stage</span></p></div>",
+      "css": ".ds-frame { position: relative; padding: .45rem .55rem .5rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-dx { background: transparent; box-shadow: inset 0 0 0 1px #ccd3da; } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; }"
+    },
+    {
+      "name": "Depth blocks (next and recent)",
+      "kind": "custom",
+      "refersTo": "log-line",
+      "description": "What the lead section's frames carry and the compact ones do not: the next items inside the frame, the recent commit sequence in the caption, and the line stating what the phone's cap is hiding.",
+      "html": "<div class=\"ds-depth\"><div class=\"ds-next\"><p class=\"ds-next-head\">next</p><ul><li>Restyling surfaces that already work is parked. That covers Potluck and the cook page, not new surfaces.</li><li>The phone app, from Task 18 of its plan.</li></ul></div><ol class=\"ds-log\"><li><span class=\"ds-when\">1d</span><span class=\"ds-what\">chore: the phone release procedure, and a guard that can see the phone app</span></li><li><span class=\"ds-when\">1d</span><span class=\"ds-what\">feat: timers that ring when the phone locked</span></li></ol><p class=\"ds-more\">+2 next &middot; +2 recent</p></div>",
+      "css": ".ds-depth { background: #dae0e7; padding: .5rem .55rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-next { margin: .45rem 0 0; } .ds-next-head { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; opacity: .75; } .ds-next ul { list-style: none; margin: .15rem 0 0; padding-left: 0; } .ds-next li { padding-left: .95rem; text-indent: -.95rem; font-size: .82rem; line-height: 1.3; margin-top: .12rem; overflow-wrap: anywhere; } .ds-next li::before { content: '-\\00a0'; color: #5d6671; } .ds-log { margin: .3rem 0 0; padding: 0; list-style: none; } .ds-log li { display: flex; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .66rem; line-height: 1.45; color: #5d6671; } .ds-log .ds-when { flex: 0 0 2.6rem; text-align: right; } .ds-log .ds-what { overflow-wrap: anywhere; } .ds-more { margin: .3rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: #5d6671; }"
     },
     {
       "name": "Empty Panel",
-      "kind": "card",
+      "kind": "custom",
       "refersTo": "empty-panel",
-      "description": "Nothing pushed yet, or a payload the Worker is too old to read. Dashed rather than solid, and always naming the exact command that fixes it.",
+      "description": "Nothing pushed yet, an unreadable payload version, or a project name that is not on the board. One unexposed frame at sheet width, stating the exact command that fixes it.",
       "html": "<div class=\"ds-empty\"><p>Nothing has been pushed to this dashboard.</p><p>Run <code class=\"ds-code\">wipboard push</code> on the machine that holds the repos.</p></div>",
-      "css": ".ds-empty { background: #fff; border: 1px dashed #d0d7de; border-radius: 8px; padding: 1rem; font: 16px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: #1a1a1a; } .ds-empty p { margin: 0 0 .5rem; } .ds-empty p:last-child { margin-bottom: 0; } .ds-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #eaeef2; padding: .1rem .3rem; border-radius: 4px; } @media (prefers-color-scheme: dark) { .ds-empty { background: #161b22; border-color: #30363d; color: #e6edf3; } .ds-code { background: #21262d; } }"
+      "css": ".ds-empty { margin: 1.25rem 0 0; padding: 1rem; max-width: 44ch; box-shadow: inset 0 0 0 1px #ccd3da; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-empty p { margin: 0 0 .6rem; } .ds-empty p:last-child { margin-bottom: 0; } .ds-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: #ccd3da; padding: .08rem .3rem; }"
     }
   ],
   "narrative": {
-    "northStar": "The Shop Door Board",
-    "overview": "This is the board nailed up by the door of a workshop, read on the way past. Nobody stands in front of it. They glance, take one fact away, and keep walking. Everything here follows from that: the oldest thing on the page is the biggest, the states that matter shout in a single word, and there is nothing to linger over because lingering was never the job.\n\nThe page descends from a terminal table and does not pretend otherwise. It is flat, system fonts, bordered rectangles, no imagery, no illustration, no empty decoration. What makes it feel designed rather than unstyled is the hierarchy: one enormous number at the top (how old this snapshot is), then a list of cards whose only ornament is a thick red edge on the rows that are lying to you. The restraint is load-bearing, not an absence of effort. A board that looked expensive would be a board you distrust.\n\nIt is read on a phone, usually in the dark, usually one-handed, usually for about four seconds. The dark scheme is not a courtesy, it is the common case. Single column is the base layout and the wide layout is the afterthought, which is the reverse of how most pages are built here.",
+    "northStar": "The Proof Sheet",
+    "overview": "This is a darkroom contact sheet: the whole roll printed on one sheet, read at arm's length, with the frames that are lying to you crossed out in grease pencil. A contact sheet exists to answer one question, \"what have I actually got\", from a single object rather than from a list, and it is honest by construction that it is a print of a moment rather than the negatives. That last part is the product's own confession about staleness, which is why the world fits.\n\nThe sheet's tone does the work before any word is read. Every frame prints at a ground set by how long it has been since that project's last commit, on a fixed six-step density ramp, so the sheet's overall shade is the board's shape. The sheet is then cut in two: working on leads, the rest follows, and the cut is the page's main hierarchy. One saturated ink exists on the page, a grease-pencil wax, and it carries condition and nothing else. Everything else is paper, ink, silver and rebate.\n\nBoth schemes are first-class and the file carries two full palettes. The light scheme is a print on the bench; the dark scheme is the same sheet on a light table, where the dense frames are the ones that glow. Density still means distance from the ground in both, so the sheet's shape reads identically either way. The dark scheme is the common case: a phone, in the dark, for about four seconds. The world's earlier warm rendition (cream paper, sepia, beige) was built and rejected on 2026-11-02; a darkroom is not a beige place, and the shipped rendition is the cold end of the same room.",
     "keyCharacteristics": [
-      "One number dominates the page, and it is a confession, not a metric.",
-      "Flat surfaces, 1px borders, zero shadows.",
-      "System fonts only. Monospace appears exactly where the content is machine text.",
-      "Red is reserved. When it appears, something is wrong.",
-      "Dark mode is a first-class scheme, not an inversion.",
-      "No motion anywhere. Nothing animates, transitions, or fades."
+      "Ground tone encodes recency on a fixed six-step ramp; it is never computed from the board.",
+      "One saturated ink (wax), reserved for condition. Everything else is a grey.",
+      "Square corners everywhere. No radius anywhere in the system.",
+      "The rebate is the gap: the page shows through between frames and nothing draws a divider.",
+      "Exactly one text colour inside a frame, at full ink.",
+      "Machine type (monospace) for everything the machine stamped; the UI face for human text.",
+      "One motion in the whole system, and it is the sheet coming up in the developer."
     ],
     "rules": [
-      {
-        "name": "The Three Tones Rule",
-        "body": "Red, green and amber are condition colours. They may only ever report a state the data actually holds: snapshot freshness and the suspect flag. They are never used for emphasis, branding, links, headings, or because a region needed livening up. On a healthy board the page is entirely grey, and that is correct.",
-        "section": "colors"
-      },
-      {
-        "name": "The Inherited Palette Rule",
-        "body": "These values came from GitHub's interface, not from a decision. The roles are binding: three distinguishable freshness tones, one alarm colour, one muted tier for context, one hairline, one chip fill. The hex values are the current implementation and a future pass may replace them, provided it keeps the roles and clears WCAG 2.2 AA.",
-        "section": "colors"
-      },
-      {
-        "name": "The No Colour Alone Rule",
-        "body": "Every condition colour ships with text that says the same thing. The age tone is paired with a written note, the suspect row is paired with a 6px edge and a bolder name, the flags are words and not swatches. Colour is the second channel here and never the first.",
-        "section": "colors"
-      },
-      {
-        "name": "The Age Outranks The Name Rule",
-        "body": "The snapshot age is set larger than the product's own wordmark and larger than every project on the board. A visitor who reads one thing must read how old this page is, because a dashboard that silently shows yesterday is the exact failure this project exists to prevent.",
-        "section": "typography"
-      },
-      {
-        "name": "The Monospace Means Machine Rule",
-        "body": "Monospace marks text the machine produced or the reader must type: a branch name, a command. A project name is a human name and stays in the UI face even though a terminal would have set it in mono.",
-        "section": "typography"
-      },
-      {
-        "name": "The One Column Rule (withdrawn)",
-        "body": "WITHDRAWN 2026-11-01. Inferred from the stylesheet's single breakpoint rather than decided, and rejected by the author. Above 40rem a multi-column grid serves a glanceable board better than two viewports of scrolling; the sort order is the only real constraint on how. See docs/superpowers/specs/2026-11-01-dashboard-redesign.md.",
-        "section": "layout"
-      },
-      {
-        "name": "The Thick Edge Means Suspect Rule",
-        "body": "A 6px left border is reserved for a row whose stage may be a lie. No other element may take a border wider than 1px, or the one signal that matters stops being visible at a glance.",
-        "section": "shapes"
-      }
+      { "name": "The One Ink Rule", "section": "colors", "body": "There is exactly one saturated colour in the system and it reports a condition the data actually holds. It is never used for emphasis, branding, a heading, a link, or because a region looked flat. On a board with nothing suspect and a fresh snapshot, the page is entirely grey, and that is correct." },
+      { "name": "The Density Is Recency Rule", "section": "colors", "body": "A frame's ground is a fixed function of its last commit, on a ramp of six constant steps. It is never a gradient computed across the current board, or the same project would print differently on a different day, and the sheet would stop being comparable with itself. Density is also never used to mean anything else: not stage, not priority, not suspicion." },
+      { "name": "The One Text Colour Inside A Frame Rule", "section": "colors", "body": "Text on a density ground is full ink, always, and the six grounds all clear WCAG 2.2 AA against it. A muted grey tier was tried inside frames on 2026-11-02 and removed the same day: a second text colour has to clear all six steps, a grey that does is no longer muted, and it failed AA at the dense end in both schemes. The silver tier survives only outside the frames. Do not reintroduce a muted colour inside a frame without re-checking it against d5." },
+      { "name": "The No Condition By Colour Alone Rule", "section": "colors", "body": "Every condition ships on at least two channels, and the words are the first one. The suspect state has three: the struck stage, the struck frame number, and the literal ! among the flags, with the wax only agreeing. The exposure stamp's tone is never rendered without its plain-language note. PRODUCT.md holds this page to WCAG 2.2 AA and these states are the entire value of the page." },
+      { "name": "The Stamp Outranks Everything Rule", "section": "typography", "body": "The snapshot age is set larger than the wordmark and larger than every project name, on every surface that exists, including a single project's page. A reader who takes one fact away must take this one, because a dashboard that silently shows yesterday is the exact failure this product exists to prevent. Never let another element outgrow it, and never render a surface without it." },
+      { "name": "The Hierarchy Without A Second Colour Rule", "section": "typography", "body": "Inside a frame, rank is carried by size, weight and tracking only. If something needs to recede, make it smaller or lighter, never greyer." },
+      { "name": "The Monospace Means Machine Rule", "section": "typography", "body": "Monospace marks what the machine stamped or the reader must type: ages, frame numbers, stages, flags, branch names, counts, commands. A project name and a note are human writing and stay in the UI face even though a terminal would set them in mono." },
+      { "name": "The Column Flow Rule", "section": "layout", "body": "The sheet flows down each column, never across rows, at every width. The payload's order is a ranking and the layout must not scramble it. Multicolumn also commits to no row count, which is why it survives from 22rem to 86rem without a second layout." },
+      { "name": "The Cut Rule", "section": "layout", "body": "The sheet is cut into exactly two sections, and the cut is the page's main hierarchy: what you are inside leads, everything else follows. Both sections keep payload order internally, and frame numbers are assigned before the split, so a frame number always means the same rank it means in the terminal and moving a project between sections never renumbers it. The section label is machine type at full ink over an ink rule with air above it: it was silver at .7rem over a rebate rule until 2026-11-02, which is the edge strip's own treatment, and made the second section read as the sheet continuing rather than as a second sheet." },
+      { "name": "The Stated Cap Rule", "section": "layout", "body": "A phone caps a lead frame's depth at two next items and two commits, because six lead frames at four and four put roughly 3000px between the stamp and the rest. The cap is stated by a +2 next line, never silent: a block that quietly drops two of its four items is indistinguishable from a project that only had two. Nothing is capped at 48rem and above, and the line is hidden there." },
+      { "name": "The Density Is Not Elevation Rule", "section": "elevation", "body": "A denser frame is older, not nearer. Depth must never become a second channel for condition, and a suspect frame is never raised, outlined or shadowed; it is struck." },
+      { "name": "The Rebate Is The Divider Rule", "section": "elevation", "body": "Separation is the gap, not a line. No frame draws a border. The only rules on the page are the edge strip's hairline, the two section rules, and the project page's block rules." },
+      { "name": "The Hand Mark Rule", "section": "shapes", "body": "Any mark that represents a human judgement is drawn, slightly off-axis, and overhangs what it marks. Any mark that represents a machine value is square, aligned and tabular. Do not let the two swap." },
+      { "name": "The No Radius Rule", "section": "shapes", "body": "Nothing in this system is rounded. A rounded corner is a card, and a card is the vertical stack of status panels this page was redesigned to stop being." }
     ],
     "dos": [
-      "Do keep the snapshot age the largest element on the page (1.6rem/700), larger than the wordmark and every project name.",
-      "Do pair every condition colour with words. The tone is the second channel, never the only one.",
-      "Do design the narrow layout first and treat the 40rem block as padding and measure only.",
-      "Do give dark mode equal care. It is the common case, read on a phone at night, and every condition colour has a separate dark value for contrast reasons.",
-      "Do use the CLI's exact flag strings (!, stuck Nd, dirty, ^N) so the two views never disagree.",
-      "Do keep the whole stylesheet inline in render.ts. No build step, no framework, no client-side fetch: the page must work with nothing but the HTML that arrives."
+      "Do keep the exposure stamp the largest element on every surface, larger than the wordmark and every project name, and never render a surface without it.",
+      "Do keep text inside a frame at full ink, and build hierarchy from size, weight and tracking.",
+      "Do keep silver for what sits on the paper: edge strip, tally, captions, logs, notes.",
+      "Do re-check both the wax and the single text ink against d5 in both schemes if any ramp step moves.",
+      "Do give every condition a word. Colour agrees with the words; it never carries them alone.",
+      "Do flow the sheet down its columns, at every width.",
+      "Do state any cap you apply, the way the +2 next line does.",
+      "Do use the CLI's exact flag strings so the terminal and the sheet never disagree.",
+      "Do keep the whole system inline in render.ts: no framework, no build step, no client fetch, no external font. The page must work with nothing but the HTML that arrives.",
+      "Do design dark as its own print. It is the common case, not an inversion."
     ],
     "donts": [
-      "Don't use red, green or amber for anything that is not a reported condition. No red headings, no green buttons, no amber highlights.",
-      "WITHDRAWN 2026-11-01: Don't add a second column at any width.",
-      "WITHDRAWN 2026-11-01: Don't add motion. This was inferred from the stylesheet containing no transitions, not decided. Motion is open to the redesign.",
-      "Don't introduce a border heavier than 1px except the suspect row's 6px left edge.",
-      "Don't add a fourth radius, a third font family, or a colour that does not have a role listed above.",
-      "Don't make anything interactive. The dashboard is read-only by product decision; a button here implies a write path that does not exist.",
-      "Don't interpolate a value into the markup without escapeHtml. Project names and notes are user text read in a browser, and the rule lives as a comment at that function."
+      "Don't introduce a second saturated colour, or use wax for anything that is not a condition the data holds.",
+      "Don't put wax text on a density ground. Wax stays where its ground is known: the strike, the focus ring, and the stamp block on the paper.",
+      "Don't add a muted text tier inside a frame.",
+      "Don't compute the density ramp from the current board, or reuse density to mean anything other than recency.",
+      "Don't add a drop or offset shadow. The only box-shadow permitted is the 1px inset rebate hairline.",
+      "Don't add a border-radius anywhere.",
+      "Don't draw a border around a frame. The gap is the divider.",
+      "Don't mark a suspect frame with a ring, a tint, or elevation. It is struck.",
+      "Don't add a second motion, or let motion start from an invisible state.",
+      "Don't re-sort the payload, re-number frames after the section split, or make anything interactive beyond the project link. The dashboard is read-only by product decision.",
+      "Don't interpolate a value into the markup without escapeHtml. The rule lives as a comment at that function."
     ]
   }
 }
