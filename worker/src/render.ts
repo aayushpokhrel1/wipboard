@@ -219,8 +219,9 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
     ? `<p class="note">${escapeHtml(project.note)}</p>`
     : "";
   const nextItems = project.next?.items ?? [];
-  // The depth only prints in the lead section. Nineteen of these at once is
-  // the wall of paragraphs this redesign exists to avoid.
+  // The depth only prints in the lead section. Nineteen cards with four next
+  // items and four commits each is the wall of paragraphs this page exists to
+  // avoid.
   const next =
     lead && nextItems.length
       ? `<div class="next">
@@ -238,16 +239,26 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
         )
         .join("")}</ol>`
     : "";
-  // What the phone's capped depth is not showing. Stated rather than silent:
-  // a block that quietly drops two of its four items is indistinguishable from
-  // a project that only had two. Hidden above 48rem, where nothing is capped.
-  const hidden = lead
-    ? [
-        nextItems.length > 2 ? `+${nextItems.length - 2} next` : "",
-        commits.length > 2 ? `+${commits.length - 2} recent` : "",
-      ].filter(Boolean)
-    : [];
-  const more = hidden.length ? `<p class="more">${escapeHtml(hidden.join(" · "))}</p>` : "";
+  // The drawer, and the reason every card can afford to be short. What is
+  // happening now (the branch, the subject, the changed count, the note) is
+  // always on the face of the card; the depth behind it is one press away.
+  //
+  // The summary counts what is inside rather than teasing the first line of
+  // it, because a count is the one summary that cannot be misread as the whole
+  // thing. This replaced a rule that hid items under 48rem and printed
+  // "+2 next": that told the reader what they were missing without offering
+  // it, and the full depth was only reachable on another page.
+  const counts = [
+    nextItems.length ? `${nextItems.length} next` : "",
+    commits.length ? `${commits.length} recent` : "",
+  ].filter(Boolean);
+  const drawer = counts.length
+    ? `<details class="drawer">
+        <summary>${escapeHtml(counts.join(" \u00b7 "))}</summary>
+        ${next}
+        ${log}
+      </details>`
+    : "";
   const git = project.has_git
     ? `<span class="branch">${escapeHtml(project.branch || "?")}</span>
         <span class="subject">${escapeHtml(project.subject)}</span>
@@ -267,423 +278,436 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
           <span class="in-stage">${escapeHtml(inStage)} in stage</span>
           ${flags}
         </p>
-        ${next}
       </div>
       <div class="caption">
         ${caption}
-        ${log}
-        ${more}
         <p class="git">${git}</p>
+        ${drawer}
       </div>
     </li>`;
 }
 
 const STYLE = `
 :root {
-  color-scheme: light dark;
-  /* Unexposed paper. The grid gap is the rebate, so the page itself shows
-     through between the frames and no element has to draw one. */
-  --paper: #eef1f4;
-  --ink: #11151a;
-  --silver: #5d6671;
-  /* The one saturated ink on the page. Grease pencil, and nothing else.
-     Anything here that is not a condition the data actually holds is grey.
-
-     This is darker than a grease pencil really is, and it is measured rather
-     than chosen: the wax strike is a non-text mark and needs 3:1 against the
-     ground it is drawn on, which is any step of the ramp. #c62f22 was used
-     until 2026-11-02 and reached only 2.49:1 on d5, so the suspect mark was
-     at its weakest on the stalest frames, which are the likeliest to be
-     suspect. This clears 3.2:1 on d5 and 6.3:1 on the paper. */
-  --wax: #a8231a;
-  --rebate: #ccd3da;
-  /* The density ramp: six steps away from the paper, fresh to stale.
-     The light scheme's dense end stops at a mid grey rather than going as dark
-     as the dark scheme's goes light, so there is headroom under the wax and
-     under the single text ink at the dense end. Re-check both if d5 moves. */
-  --d0: #e4e8ed;
-  --d1: #dae0e7;
-  --d2: #cdd5de;
-  --d3: #bfc8d3;
-  --d4: #b2bcc8;
-  --d5: #a6b0bb;
+  /* One scheme, and it is this one. The proof sheet carried a light palette
+     and a dark twin, which meant every colour decision had to be made and
+     re-checked twice; that is exactly how --wax was silently lost in the light
+     scheme on 2026-11-04 while the dark scheme looked perfect. An instrument
+     has a lit face. There is no second palette to keep true. */
+  color-scheme: dark;
+  --field: #070b10;
+  --bar: #0c131b;
+  --surface: #101a24;
+  --line: #1d2c3a;
+  --text: #e8f0f6;
+  --dim: #8396a6;
+  /* The instrument's own colour. Carries recency on the rail, and marks the
+     machine-read values inside a card (branch, commit age). 9.7:1 on a card. */
+  --accent: #3ad6c4;
+  /* And the alarm. Nothing that is not a condition the data actually holds is
+     ever drawn in this. 5.7:1 on a card as a mark, 6.0:1 as text on the bar,
+     and far enough from the accent in hue that the two never read as one
+     scale. */
+  --hot: #ff5a42;
+  --on-hot: #120503;
+  --chip: #1b2a38;
+  --chip-ink: #a9bccb;
+  /* Recency, as the rail down the left edge of every card: lit when the work
+     is warm, almost out when it is cold. The dim end is deliberately close to
+     the card and does not meet 3:1 against it, which is allowed because the
+     rail is never the only carrier: the same fact is printed as text ("23d")
+     in the card's own meta line. If the rail ever becomes the sole channel for
+     something, it has to be re-measured. */
+  --r0: #3ad6c4;
+  --r1: #2faea0;
+  --r2: #2b8b84;
+  --r3: #286b69;
+  --r4: #244f52;
+  --r5: #20383c;
   --develop: 520ms;
 }
 * { box-sizing: border-box; }
-::selection { background: var(--wax); color: var(--paper); }
+::selection { background: var(--accent); color: var(--field); }
 html {
-  scrollbar-color: var(--silver) var(--paper);
+  scrollbar-color: var(--line) var(--field);
   -webkit-text-size-adjust: 100%;
 }
 body {
   margin: 0;
-  padding: 1rem .9rem 2.5rem;
-  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 0 0 3rem;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
   font-variant-numeric: tabular-nums;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--field);
+  color: var(--text);
 }
 
-/* The sheet's own margin: an edge strip of machine type, the way a print
-   carries its stock and its frame codes along the rebate. Monospace here is
-   measurement, not decoration: every value in this strip is machine-stamped. */
+/* The chrome strip. Machine type: every value along here is stamped, not
+   written. */
 .edge {
   display: flex;
   flex-wrap: wrap;
-  gap: .5rem .9rem;
-  align-items: baseline;
-  padding-bottom: .5rem;
-  border-bottom: 1px solid var(--rebate);
+  align-items: center;
+  gap: .4rem .9rem;
+  padding: .7rem 1.1rem;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
-  letter-spacing: .14em;
+  font-size: .66rem;
+  letter-spacing: .22em;
   text-transform: uppercase;
-  color: var(--silver);
+  color: var(--dim);
 }
-.edge h1 { font: inherit; margin: 0; color: var(--ink); }
+.edge h1 { font: inherit; letter-spacing: .3em; margin: 0; color: var(--text); }
 .edge .host { margin-left: auto; }
 
-.stamp { display: flex; flex-wrap: wrap; gap: 0 1.6rem; margin: .9rem 0 0; }
-.aged { flex: 1 1 11rem; margin: 0; }
-/* The exposure stamp. The largest thing on the page by a wide margin, and it
-   must stay that way: a reader who takes one fact away must take this one. */
+/* The readout. This strip is the whole reason the page stopped being a
+   document: the three things you can act on (how old this is, how much of it
+   is lying, where the mass sits) are answered here as numbers, before a single
+   card is read. Everything below it is detail. */
+/* Stacked on a phone, side by side from 34rem. Four tally tiles and the stamp
+   do not fit across 375px: they fitted at the width this was designed at and
+   ran off the right edge on the device the page is most often read on, which
+   is the one width that is never optional. */
+.stamp {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .9rem;
+  padding: 1rem 1.1rem;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line);
+}
+.aged {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 34rem) {
+  .stamp { grid-template-columns: auto minmax(0, 1fr); gap: 1.4rem; }
+  .aged { padding: 0 1.4rem 0 0; border-bottom: 0; border-right: 1px solid var(--line); }
+}
+/* The exposure stamp, still the largest thing on the page by a wide margin and
+   it must stay that way: a reader who takes one fact away takes this one. */
 .age {
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(2.3rem, 13vw, 3.4rem);
+  font-size: clamp(2rem, 9vw, 2.9rem);
   font-weight: 700;
-  line-height: .95;
-  letter-spacing: -.035em;
-  color: var(--silver);
+  line-height: 1;
+  letter-spacing: -.04em;
+  color: var(--text);
 }
-.age.warn { color: var(--ink); }
-.age.stale { color: var(--wax); }
+/* An hour old is worth noticing; a day old is worth distrusting. Only the
+   second one gets the alarm, or the alarm means nothing by the time it is
+   earned. */
+.age.warn { color: var(--text); }
+.age.stale { color: var(--hot); }
 .age-note {
-  margin: .5rem 0 0;
-  max-width: 34ch;
-  font-size: .88rem;
-  color: var(--silver);
-}
-.age-note.stale { color: var(--wax); }
-/* The suspect count. Wax, and loud enough to be read from the same glance as
-   the stamp, but an order of magnitude below it: the snapshot's age still
-   outranks everything on this page. The word carries the condition; the colour
-   only agrees with it. */
-.alarm {
-  margin: .55rem 0 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  color: var(--wax);
-}
-
-/* The tally down the rebate. A column of counts in one place, so where the
-   mass sits is answered in the first viewport without reading a frame. */
-.tally {
-  flex: 0 0 auto;
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin: .35rem 0 0;
+  max-width: 30ch;
   font-size: .72rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--silver);
+  color: var(--dim);
 }
-.tally li { display: flex; gap: .6rem; justify-content: space-between; padding: .1rem 0; }
-.tally b { color: var(--ink); font-weight: 700; }
-
-/* Column flow, not row flow. The payload arrives sorted, stalest first, and
-   that order is the thing telling you which project to pick up; a row-flow
-   grid would put frame 2 beside frame 1 and turn the ranking into a zigzag.
-   CSS multicolumn reads top to bottom down each column, so the ranking
-   survives at every width with no committed row count. */
-/* The sheet is cut into two, and the cut is the page's main hierarchy: what
-   you are inside leads, everything else follows. The label sits in the rebate
-   as machine type, not as a title, because it is a caption on a sheet and not
-   a heading on a document.
-
-   The label was silver at .7rem over a rebate rule until 2026-11-02, which is
-   exactly the edge strip's own treatment, so the second section read as the
-   sheet continuing rather than as a second sheet. It is the same machine type,
-   at full ink over an ink rule, with air above it that no other rule has. */
-.section {
-  display: flex;
-  align-items: baseline;
-  gap: .6rem;
-  margin: 2.5rem 0 .6rem;
-  padding-bottom: .35rem;
-  border-bottom: 1px solid var(--ink);
+.age-note.stale { color: var(--hot); }
+/* The suspect count, set as a filled tag rather than coloured words. The page
+   the author rejected was one that looks calm while a third of the board is
+   lying; a tag is the loudest this can be without outranking the stamp. The
+   number and the word carry it, the fill only agrees. */
+.alarm {
+  margin: .5rem 0 0;
+  align-self: flex-start;
+  padding: .28rem .5rem;
+  background: var(--hot);
+  color: var(--on-hot);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .78rem;
+  font-size: .68rem;
   font-weight: 700;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.section span { margin-left: auto; color: var(--silver); font-weight: 400; }
-
-.sheet {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  column-gap: .5rem;
-}
-/* The lead section's frames carry the depth, so they are wider and fewer to a
-   row. The compact section below runs at the sheet's full density. */
-.sheet-lead { column-gap: .6rem; }
-.next { margin: .45rem 0 0; }
-.next-head {
-  margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .62rem;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  opacity: .75;
-}
-/* The list marker is drawn, not inherited. A page that themes its selection,
-   its scrollbar, its focus ring and its underlines should not leave its one
-   list marker to the browser, which rendered these as hollow rings inside the
-   sheet (a nested ul) and as filled discs on the project page (a top-level
-   one). A small hollow ring is also uncomfortably close to the wax ring the
-   author rejected. A dash, hung outside the text, in both places. */
-.next ul, .next-full { list-style: none; margin: .15rem 0 0; padding-left: 0; }
-.next li, .next-full li { padding-left: .95rem; text-indent: -.95rem; }
-.next li::before, .next-full li::before { content: "-\\00a0"; color: var(--silver); }
-.next li { font-size: .82rem; line-height: 1.3; margin-top: .12rem; overflow-wrap: anywhere; }
-/* The recent commit sequence. One subject tells you nothing; four read in
-   order tell you whether this is being built, documented or nursed. */
-.log { margin: .3rem 0 0; padding: 0; list-style: none; }
-.log li {
-  display: flex;
-  gap: .5rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .66rem;
-  line-height: 1.45;
-  color: var(--silver);
-}
-.log .when { flex: 0 0 2.6rem; text-align: right; }
-.log .what { overflow-wrap: anywhere; }
-/* The phone caps a lead frame's depth at two of each. Six lead frames at four
-   next items and four commits put roughly 3000px between the exposure stamp
-   and "the rest", which is the vertical stack of status cards this page was
-   redesigned to stop being, on the one device it is most often read on. The
-   cap is stated by the .more line, and the full depth is one tap away on the
-   project's own page. Nothing is capped at 48rem and above. */
-.sheet-lead .next li:nth-child(n+3),
-.sheet-lead .log li:nth-child(n+3) { display: none; }
-.more {
-  margin: .3rem 0 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .62rem;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--silver);
 }
-.cell { break-inside: avoid; margin-bottom: .5rem; }
-.frame {
-  position: relative;
-  padding: .45rem .55rem .5rem;
+
+/* The tally as instrument tiles: count above, stage under it, so the counts
+   align into one row of numbers that can be read without reading the labels. */
+.tally {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-/* Every frame gets exactly one of these: density() returns 0 to 5, or -1 for
-   dx. There is deliberately no base background to fall back on, because the
-   fallback was d0 and a frame that lost its class would have printed as fresh,
-   which is the one lie this page cannot tell. */
-.frame.d0 { background: var(--d0); }
-.frame.d1 { background: var(--d1); }
-.frame.d2 { background: var(--d2); }
-.frame.d3 { background: var(--d3); }
-.frame.d4 { background: var(--d4); }
-.frame.d5 { background: var(--d5); }
-/* A frame that was never exposed: no git, or a repo with no commits. It is
-   paper with a rebate outline rather than a density, because its age is not
-   late, it is unknown, and printing it as stale would be a guess. */
-.frame.dx { background: transparent; box-shadow: inset 0 0 0 1px var(--rebate); }
+.tally li {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: center;
+  gap: .2rem;
+  padding: .5rem .7rem;
+  background: var(--bar);
+}
+.tally li span {
+  font-size: .58rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.tally b {
+  font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+
+/* The cut. What you are inside leads; everything else follows. */
+.section {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: 1.4rem 1.1rem .6rem;
+  padding-bottom: .4rem;
+  border-bottom: 2px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.section span { margin-left: auto; color: var(--dim); }
+
+/* A field of cards, not a column of paragraphs.
+   This is a row-flow grid, and the proof sheet it replaces used CSS
+   multicolumn specifically so that payload rank read straight down each
+   column. That property is genuinely lost here: in row flow, card 2 sits
+   beside card 1 and the ranking zigzags. It is traded on purpose. Rank is
+   still legible because every card prints its own number, and a dashboard that
+   reads as one instrument at a glance was worth more to this reader than a
+   ranking that survives a column break. If rank ever has to be exact again,
+   this is the rule to revisit, not the card. */
+.sheet {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin: 0 1.1rem;
+  padding: 0;
+  list-style: none;
+}
+.sheet-lead { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.cell {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  /* The rail defaults to the card's own border colour, which is the unexposed
+     look. There is deliberately no fresh default: a card that lost its density
+     class must read as "age unknown", never as "committed minutes ago", which
+     is the one lie this page cannot tell. */
+  border-left: 4px solid var(--rail, var(--line));
+}
+.frame { padding: .6rem .75rem .5rem; }
+.cell:has(.d0) { --rail: var(--r0); }
+.cell:has(.d1) { --rail: var(--r1); }
+.cell:has(.d2) { --rail: var(--r2); }
+.cell:has(.d3) { --rail: var(--r3); }
+.cell:has(.d4) { --rail: var(--r4); }
+.cell:has(.d5) { --rail: var(--r5); }
+.cell:has(.dx) { --rail: var(--line); }
 
 .head {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: .5rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .68rem;
+  font-size: .64rem;
   letter-spacing: .1em;
 }
-.num { font-weight: 700; }
-.stage { text-transform: uppercase; }
+.num { font-weight: 700; color: var(--dim); }
+/* The stage is a chip, because it is the one field on this page a human typed
+   and the only one that can be wrong. Giving it an edge says it is a claim. */
+.stage {
+  margin-left: auto;
+  padding: .14rem .4rem;
+  background: var(--chip);
+  color: var(--chip-ink);
+  font-weight: 700;
+  font-size: .58rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
 .name {
-  margin: .25rem 0 0;
-  font-size: .95rem;
-  font-weight: 650;
+  margin: .2rem 0 .25rem;
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -.01em;
   overflow-wrap: anywhere;
 }
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: .1rem .5rem;
-  margin: .2rem 0 0;
+  gap: .15rem .45rem;
+  margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .68rem;
-  letter-spacing: .02em;
+  font-size: .62rem;
+  color: var(--dim);
 }
-/* Flags are ink at full weight, not wax. Wax text inside a frame has to clear
-   contrast against all six density steps and does not at the dense end, and
-   the alarm is already carried by the struck stage, the struck number and the
-   word itself. The wax stays where its ground is known: the strike, the
-   suspect count, and the stale stamp, all of which are drawn on the paper or
-   measured against every step of the ramp. */
-.flag { font-weight: 700; }
-
-/* The grease pencil. A suspect frame is one whose stage may be a lie, so the
-   mark goes through the stage word and says exactly that. Three channels, only
-   one of which is colour: the struck stage, the struck frame number, and the
-   literal "!" among the flags.
-
-   This was a drawn wax ring around the whole frame until 2026-11-02. It was
-   unmissable and it was too much: six rings on nineteen frames read as damage
-   rather than as a flag, and the ring said "something is wrong here" where the
-   strike says the specific thing that is wrong. Do not bring the ring back
-   without re-reading what the "!" actually means.
-
-   The stroke is drawn rather than a browser line-through: a tidy machine rule
-   through a word is not a grease pencil, and the whole point of this world is
-   that the marks on it were made by hand. One pseudo-element, two degrees off
-   axis, overhanging the word at both ends.
-
-   The number is struck only on the sheet. The project page reuses .num for the
-   branch name, where a wax line through "main" reads as "this branch is gone"
-   rather than as "this stage may be a lie". */
-.frame.suspect .stage,
-.sheet .frame.suspect .num {
-  position: relative;
-}
-.frame.suspect .stage::after,
-.sheet .frame.suspect .num::after {
-  content: "";
-  position: absolute;
-  left: -.18em;
-  right: -.18em;
-  top: 46%;
-  height: 2px;
-  background: var(--wax);
-  transform: rotate(-1.8deg);
+.flag {
+  padding: .06rem .28rem;
+  background: var(--chip);
+  color: var(--chip-ink);
+  font-weight: 700;
+  letter-spacing: .06em;
 }
 
-/* Links. The page was read-only and link-free until 2026-11-02; a frame's name
-   now opens that project. Underlines are offset rather than removed, and the
-   focus ring is wax so it is visible on every density step. */
-a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; }
-a:hover { text-decoration-thickness: 2px; }
-a:focus-visible { outline: 2px solid var(--wax); outline-offset: 2px; }
-.name a { text-decoration-color: var(--rebate); }
+/* Suspect: the stage may be a lie, so the claim itself is the thing that
+   changes. Three channels and only one of them is colour: the chip inverts to
+   a filled alarm tag, the rail goes to alarm regardless of age, and the "!"
+   prints among the flags as a word. The proof sheet drew a grease-pencil
+   stroke through the stage here; a stroke is a paper gesture and does not
+   belong on a lit instrument, but do not drop a channel when replacing it. */
+.cell:has(.suspect) { --rail: var(--hot); }
+.suspect .stage, .suspect .flag { background: var(--hot); color: var(--on-hot); }
 
-/* A project's own page. One frame at sheet width, then the blocks the board
-   had no room for. */
-.back { margin: 1rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; }
-.single { max-width: 46rem; margin: .6rem 0 0; }
-.single .frame { padding: .7rem .8rem .75rem; }
-.single .name { font-size: 1.4rem; }
-.single > .note { margin: .8rem 0 0; font-size: 1rem; max-width: 42rem; }
-.block { margin: 1.4rem 0 0; }
-.block h2 {
-  margin: 0 0 .4rem;
-  padding-bottom: .3rem;
-  border-bottom: 1px solid var(--rebate);
+/* The drawer. Every card states what is happening in one line; the depth
+   behind it opens on press. Nineteen cards with four next items and four
+   commits each is the wall of paragraphs this page exists to avoid, and the
+   proof sheet answered that by hiding items under 48rem and printing "+2
+   next", which told the reader what they were missing without offering it to
+   them.
+   <details> is the whole mechanism: no script, keyboard-operable, and it
+   survives with the summary visible if the element is ever unstyled. */
+.drawer { margin: .5rem 0 0; border-top: 1px solid var(--line); }
+.drawer > summary {
+  padding: .4rem 0 .1rem;
+  cursor: pointer;
+  list-style: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
-  font-weight: 400;
-  letter-spacing: .18em;
+  font-size: .6rem;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--silver);
+  color: var(--dim);
 }
-.next-full { margin: 0; }
-.next-full li { margin-top: .3rem; line-height: 1.4; overflow-wrap: anywhere; }
-.paths { list-style: none; margin: 0; padding-left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
-.paths li { margin-top: .15rem; padding-left: .95rem; text-indent: -.95rem; overflow-wrap: anywhere; }
-.paths li::before { content: "-\\00a0"; color: var(--silver); }
-.provenance, .absent { margin: .45rem 0 0; font-size: .8rem; color: var(--silver); }
-.single .log { font-size: .78rem; }
-.single .log li { font-size: .78rem; }
-.single .log .when { flex-basis: 3.2rem; }
+.drawer > summary::-webkit-details-marker { display: none; }
+.drawer > summary::after {
+  content: "+";
+  float: right;
+  font-weight: 700;
+  color: var(--accent);
+}
+.drawer[open] > summary::after { content: "\\2212"; }
+.drawer > summary:hover { color: var(--text); }
+.drawer > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.caption { padding: .25rem .1rem 0 .55rem; }
-.note { margin: 0; font-size: .82rem; line-height: 1.35; overflow-wrap: anywhere; }
+.next { margin: .4rem 0 0; }
+.next-head, .block h2 {
+  margin: 0 0 .15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+/* The list marker is drawn, not inherited: a page that themes its selection,
+   its scrollbar and its focus ring should not leave its one list marker to the
+   browser, which renders it differently in a nested list and a top-level one. */
+.next ul, .next-full { list-style: none; margin: .1rem 0 0; padding-left: 0; }
+.next li, .next-full li { padding-left: .9rem; text-indent: -.9rem; }
+.next li::before, .next-full li::before { content: "\\25B8\\00a0"; color: var(--accent); }
+.next li { font-size: .76rem; line-height: 1.35; margin-top: .14rem; overflow-wrap: anywhere; }
+/* One commit subject tells you nothing; four read in order tell you whether
+   this is being built, documented or nursed. */
+.log { margin: .45rem 0 0; padding: 0; list-style: none; }
+.log li {
+  display: flex;
+  gap: .5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .64rem;
+  line-height: 1.45;
+  color: var(--dim);
+}
+.log .when { flex: 0 0 2.6rem; text-align: right; color: var(--accent); }
+.log .what { overflow-wrap: anywhere; }
+
+.caption { margin-top: auto; padding: 0 .75rem .6rem; }
+.note { margin: .45rem 0 0; font-size: .78rem; line-height: 1.35; color: var(--text); overflow-wrap: anywhere; }
+/* The one line every card states without being opened: what git says is
+   happening right now. */
 .git {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 .5rem;
-  margin: .15rem 0 0;
+  gap: 0 .45rem;
+  margin: .45rem 0 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .68rem;
-  color: var(--silver);
+  font-size: .62rem;
+  color: var(--dim);
 }
-.branch { color: var(--ink); }
+.branch { color: var(--accent); font-weight: 700; }
 .subject { overflow-wrap: anywhere; }
 
-/* Nothing pushed, or a payload this Worker cannot read: one unexposed frame at
-   sheet width, so the page's shape never changes between its states. */
+a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.name a { color: var(--text); text-decoration-color: var(--line); }
+.name a:hover { color: var(--accent); }
+
+/* A project's own page: one card at full width, then the blocks the board has
+   no room for, open rather than behind a drawer, because that is why a reader
+   came here. */
+.back { margin: 1rem 1.1rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.single { max-width: 46rem; margin: .7rem 1.1rem 0; }
+.single .cell { border-left-width: 6px; }
+.single .frame { padding: .9rem 1rem .7rem; }
+.single .name { font-size: 1.5rem; }
+.single > .note { margin: .9rem 0 0; font-size: .95rem; max-width: 42rem; }
+.block { margin: 1.3rem 0 0; }
+.block h2 { padding-bottom: .3rem; border-bottom: 1px solid var(--line); }
+.next-full { margin: 0; }
+.next-full li { margin-top: .3rem; font-size: .88rem; line-height: 1.4; overflow-wrap: anywhere; }
+.paths { list-style: none; margin: 0; padding-left: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; color: var(--dim); }
+.paths li { margin-top: .15rem; padding-left: .9rem; text-indent: -.9rem; overflow-wrap: anywhere; }
+.paths li::before { content: "\\25B8\\00a0"; color: var(--accent); }
+.provenance, .absent { margin: .45rem 0 0; font-size: .78rem; color: var(--dim); }
+.single .log li { font-size: .74rem; }
+.single .log .when { flex-basis: 3.2rem; }
+
+/* Nothing pushed, or a payload this Worker cannot read. */
 .empty {
-  margin: 1.25rem 0 0;
+  margin: 1.2rem 1.1rem 0;
   padding: 1rem;
   max-width: 44ch;
-  box-shadow: inset 0 0 0 1px var(--rebate);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
 }
 .empty p { margin: 0 0 .6rem; }
 .empty p:last-child { margin-bottom: 0; }
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: .85em;
-  background: var(--rebate);
+  background: var(--chip);
+  color: var(--chip-ink);
   padding: .08rem .3rem;
 }
 
-/* The sheet comes up in the developer: the frames rise to their density once,
-   staggered down the sheet, from an already-visible default. Only the ground
-   moves, so every word on the page is readable from the first frame. */
+/* The board comes up once, staggered, and only the rail moves: every word is
+   readable from the first frame. */
 @media (prefers-reduced-motion: no-preference) {
-  .frame { animation: develop var(--develop) cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i) * 22ms); }
-  @keyframes develop { from { background-color: var(--paper); } }
+  .cell { animation: develop var(--develop) cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i) * 22ms); }
+  @keyframes develop { from { border-left-color: var(--line); opacity: .4; } }
 }
 
-/* This page is read on a phone, usually in the dark. The light scheme is a
-   print on the bench; the dark scheme is the same sheet on a light table,
-   where the dense frames are the ones that glow. Density still means distance
-   from the ground, so the sheet's shape reads identically in both. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0b0d10;
-    --ink: #e8edf2;
-    --silver: #8a95a3;
-    --wax: #ff6250;
-    --rebate: #2a313b;
-    --d0: #11141a;
-    --d1: #171c24;
-    --d2: #1f252f;
-    --d3: #28303c;
-    --d4: #323b49;
-    --d5: #3d4757;
-  }
-}
-
-/* Two columns on every phone. One column of nineteen frames is the scrolling
-   list this page was redesigned to stop being, and 22rem is below the
-   narrowest phone still shipping. */
-@media (min-width: 22rem) { .sheet { columns: 2; } .sheet-lead { columns: 1; } }
 @media (min-width: 48rem) {
-  body { padding: 1.5rem 1.5rem 3rem; }
-  .sheet { columns: 3; column-gap: .65rem; }
-  .sheet-lead { columns: 2; }
-  .cell { margin-bottom: .65rem; }
-  .sheet-lead .next li:nth-child(n+3) { display: list-item; }
-  .sheet-lead .log li:nth-child(n+3) { display: flex; }
-  .more { display: none; }
+  .edge, .stamp { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .sheet { margin: 0 1.5rem; gap: 12px; }
+  .section { margin: 1.6rem 1.5rem .7rem; }
+  .back, .single, .empty { margin-left: 1.5rem; margin-right: 1.5rem; }
 }
 @media (min-width: 70rem) {
-  body { max-width: 86rem; margin: 0 auto; }
-  .sheet { columns: 4; }
-  .sheet-lead { columns: 3; }
+  .stamp { grid-template-columns: auto minmax(0, 46rem); }
 }
 `;
 

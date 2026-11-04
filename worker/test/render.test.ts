@@ -144,6 +144,37 @@ describe("renderBoard", () => {
     expect(html).toContain("<span>parked</span> <b>1</b>");
   });
 
+  // The card states what is happening and hides the depth behind a press. The
+  // counts in the summary are the whole contract: a drawer that says "4 next"
+  // and opens on two items is worse than no drawer, because the reader stops
+  // looking. A project with nothing to disclose gets no drawer at all rather
+  // than an empty one.
+  it("counts what is in the drawer, and omits it when there is nothing", () => {
+    const html = renderBoard(
+      board({
+        projects: [
+          project({
+            name: "deep",
+            changed: 2, // in flight, so this one leads and carries depth
+            next: { items: ["one", "two", "three"], source: "HANDOVER.md" },
+            recent: [
+              { at: "2026-10-20T11:00:00", subject: "a" },
+              { at: "2026-10-19T11:00:00", subject: "b" },
+            ],
+          }),
+          project({ name: "bare", last_commit: "2026-01-01T09:00:00" }),
+        ],
+      }),
+      NOW,
+    );
+    const cards = html.split('<li class="cell');
+    const deep = cards.find((card) => card.includes("deep")) ?? "";
+    const bare = cards.find((card) => card.includes("bare")) ?? "";
+    expect(deep).toContain("<summary>3 next · 2 recent</summary>");
+    expect(deep).toContain("three");
+    expect(bare).not.toContain("<details");
+  });
+
   it("shows branch, subject, changed count and time in stage", () => {
     const html = renderBoard(
       board({
@@ -213,7 +244,10 @@ describe("the stylesheet", () => {
     const html = renderEmpty();
     const css = html.slice(html.indexOf("<style>") + 7, html.indexOf("</style>"));
     expect(css.replace(/\/\*[\s\S]*?\*\//g, "")).not.toContain("*/");
-    // The one the bug ate, and the one the whole page's alarm is drawn in.
-    expect(css).toMatch(/:root\s*\{[\s\S]*?--wax:/);
+    // A token from the end of :root, so a declaration swallowed anywhere in
+    // the block fails this. --hot is the one the whole page's alarm is drawn
+    // in; it was --wax until the sheet became an instrument on 2026-11-04.
+    expect(css).toMatch(/:root\s*\{[\s\S]*?--hot:/);
+    expect(css).toMatch(/:root\s*\{[\s\S]*?--develop:/);
   });
 });
