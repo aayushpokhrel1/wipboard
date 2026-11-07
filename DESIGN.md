@@ -1,81 +1,100 @@
 ---
 name: wipboard
-description: The whole roll printed on one sheet, read on a phone in the dark.
+description: A lit instrument panel for every repo you left half-finished, read on a phone in the dark.
 colors:
-  paper: "#eef1f4"
-  ink: "#11151a"
-  silver: "#5d6671"
-  wax: "#a8231a"
-  rebate: "#ccd3da"
-  d0: "#e4e8ed"
-  d1: "#dae0e7"
-  d2: "#cdd5de"
-  d3: "#bfc8d3"
-  d4: "#b2bcc8"
-  d5: "#a6b0bb"
-  paper-dark: "#0b0d10"
-  ink-dark: "#e8edf2"
-  silver-dark: "#8a95a3"
-  wax-dark: "#ff6250"
-  rebate-dark: "#2a313b"
-  d0-dark: "#11141a"
-  d1-dark: "#171c24"
-  d2-dark: "#1f252f"
-  d3-dark: "#28303c"
-  d4-dark: "#323b49"
-  d5-dark: "#3d4757"
+  field: "#070b10"
+  bar: "#0c131b"
+  surface: "#101a24"
+  line: "#1d2c3a"
+  text: "#e8f0f6"
+  dim: "#8396a6"
+  accent: "#3ad6c4"
+  hot: "#ff5a42"
+  on-hot: "#120503"
+  chip: "#1b2a38"
+  chip-ink: "#a9bccb"
+  r0: "#3ad6c4"
+  r1: "#2faea0"
+  r2: "#2b8b84"
+  r3: "#286b69"
+  r4: "#244f52"
+  r5: "#20383c"
 typography:
-  display:
+  readout:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "clamp(2.3rem, 13vw, 3.4rem)"
+    fontSize: "clamp(2rem, 9vw, 2.9rem)"
     fontWeight: 700
-    lineHeight: 0.95
-    letterSpacing: "-0.035em"
-  count:
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  tile-count:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "1.05rem"
+    fontSize: "clamp(1.3rem, 4.5vw, 1.9rem)"
     fontWeight: 700
-    lineHeight: 1.4
-    letterSpacing: "0.02em"
-  headline:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.78rem"
-    fontWeight: 700
-    lineHeight: 1.4
-    letterSpacing: "0.18em"
+    lineHeight: 1
+    letterSpacing: "-0.03em"
   title:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
-    fontSize: "0.95rem"
-    fontWeight: 650
+    fontSize: "1rem"
+    fontWeight: 700
     lineHeight: 1.2
-    letterSpacing: "normal"
+    letterSpacing: "-0.01em"
+  title-single:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.01em"
   body:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
-    fontSize: "16px"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.4
     letterSpacing: "normal"
-  label:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.7rem"
+  note:
+    fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: "0.78rem"
     fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "normal"
+  headline:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.66rem"
+    fontWeight: 700
     lineHeight: 1.4
-    letterSpacing: "0.14em"
-  meta:
+    letterSpacing: "0.24em"
+  tag:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.68rem"
+    fontWeight: 700
+    lineHeight: 1.4
+    letterSpacing: "0.14em"
+  strip:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.66rem"
     fontWeight: 400
     lineHeight: 1.4
-    letterSpacing: "0.02em"
-  micro:
+    letterSpacing: "0.22em"
+  stamped:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.64rem"
+    fontWeight: 400
+    lineHeight: 1.4
+    letterSpacing: "0.1em"
+  meta:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.62rem"
     fontWeight: 400
     lineHeight: 1.4
-    letterSpacing: "0.18em"
-  mono:
+    letterSpacing: "normal"
+  micro:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.66rem"
+    fontSize: "0.58rem"
+    fontWeight: 700
+    lineHeight: 1.4
+    letterSpacing: "0.16em"
+  log:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.64rem"
     fontWeight: 400
     lineHeight: 1.45
     letterSpacing: "normal"
@@ -83,479 +102,501 @@ rounded:
   none: "0"
 spacing:
   hair: "0.15rem"
-  xs: "0.25rem"
-  sm: "0.45rem"
+  xs: "0.2rem"
+  sm: "0.4rem"
   gutter: "0.5rem"
   md: "0.6rem"
+  card: "0.75rem"
   lg: "0.9rem"
-  xl: "1rem"
-  xxl: "1.5rem"
-  cut: "2.5rem"
+  xl: "1.1rem"
+  xxl: "1.4rem"
+  edge: "1.5rem"
+  foot: "3rem"
 components:
-  frame:
-    backgroundColor: "{colors.d0}"
-    textColor: "{colors.ink}"
+  card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
     rounded: "{rounded.none}"
-    padding: "0.45rem 0.55rem 0.5rem"
-  frame-d3:
-    backgroundColor: "{colors.d3}"
-    textColor: "{colors.ink}"
+    padding: "0.6rem 0.75rem 0.5rem"
+  card-single:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
     rounded: "{rounded.none}"
-    padding: "0.45rem 0.55rem 0.5rem"
-  frame-d5:
-    backgroundColor: "{colors.d5}"
-    textColor: "{colors.ink}"
+    padding: "0.9rem 1rem 0.7rem"
+  card-caption:
+    textColor: "{colors.dim}"
     rounded: "{rounded.none}"
-    padding: "0.45rem 0.55rem 0.5rem"
-  frame-unexposed:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    padding: "0 0.75rem 0.6rem"
+  readout-strip:
+    backgroundColor: "{colors.bar}"
+    textColor: "{colors.text}"
     rounded: "{rounded.none}"
-    padding: "0.45rem 0.55rem 0.5rem"
-  frame-single:
-    backgroundColor: "{colors.d0}"
-    textColor: "{colors.ink}"
+    padding: "1rem 1.1rem"
+  readout-age:
+    textColor: "{colors.text}"
+    typography: "{typography.readout}"
+  readout-age-stale:
+    textColor: "{colors.hot}"
+    typography: "{typography.readout}"
+  alarm-tag:
+    backgroundColor: "{colors.hot}"
+    textColor: "{colors.on-hot}"
+    typography: "{typography.tag}"
     rounded: "{rounded.none}"
-    padding: "0.7rem 0.8rem 0.75rem"
-  frame-head:
-    textColor: "{colors.ink}"
-    typography: "{typography.meta}"
-  frame-name:
-    textColor: "{colors.ink}"
-    typography: "{typography.title}"
-  caption:
-    textColor: "{colors.ink}"
+    padding: "0.28rem 0.5rem"
+  tally-tile:
+    backgroundColor: "{colors.bar}"
+    textColor: "{colors.text}"
     rounded: "{rounded.none}"
-    padding: "0.25rem 0.1rem 0 0.55rem"
-  exposure-stamp:
-    textColor: "{colors.silver}"
-    typography: "{typography.display}"
-  exposure-stamp-warn:
-    textColor: "{colors.ink}"
-    typography: "{typography.display}"
-  exposure-stamp-stale:
-    textColor: "{colors.wax}"
-    typography: "{typography.display}"
-  alarm-count:
-    textColor: "{colors.wax}"
-    typography: "{typography.count}"
+    padding: "0.5rem 0.7rem"
   edge-strip:
-    textColor: "{colors.silver}"
-    typography: "{typography.label}"
-    padding: "0 0 0.5rem"
-  tally:
-    textColor: "{colors.silver}"
-    typography: "{typography.label}"
-    padding: "0.1rem 0"
+    backgroundColor: "{colors.bar}"
+    textColor: "{colors.dim}"
+    typography: "{typography.strip}"
+    rounded: "{rounded.none}"
+    padding: "0.7rem 1.1rem"
   section-rule:
-    textColor: "{colors.ink}"
+    textColor: "{colors.text}"
     typography: "{typography.headline}"
-    padding: "0 0 0.35rem"
-  flag:
-    textColor: "{colors.ink}"
+    padding: "0 0 0.4rem"
+  chip-stage:
+    backgroundColor: "{colors.chip}"
+    textColor: "{colors.chip-ink}"
+    typography: "{typography.micro}"
+    rounded: "{rounded.none}"
+    padding: "0.14rem 0.4rem"
+  chip-stage-suspect:
+    backgroundColor: "{colors.hot}"
+    textColor: "{colors.on-hot}"
+    typography: "{typography.micro}"
+    rounded: "{rounded.none}"
+    padding: "0.14rem 0.4rem"
+  chip-flag:
+    backgroundColor: "{colors.chip}"
+    textColor: "{colors.chip-ink}"
     typography: "{typography.meta}"
+    rounded: "{rounded.none}"
+    padding: "0.06rem 0.28rem"
+  chip-flag-suspect:
+    backgroundColor: "{colors.hot}"
+    textColor: "{colors.on-hot}"
+    typography: "{typography.meta}"
+    rounded: "{rounded.none}"
+    padding: "0.06rem 0.28rem"
+  drawer-summary:
+    textColor: "{colors.dim}"
+    typography: "{typography.micro}"
+    rounded: "{rounded.none}"
+    padding: "0.4rem 0 0.1rem"
   log-line:
-    textColor: "{colors.silver}"
-    typography: "{typography.mono}"
+    textColor: "{colors.dim}"
+    typography: "{typography.log}"
   empty-panel:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
     rounded: "{rounded.none}"
     padding: "1rem"
   code-inline:
-    backgroundColor: "{colors.rebate}"
-    textColor: "{colors.ink}"
-    typography: "{typography.mono}"
+    backgroundColor: "{colors.chip}"
+    textColor: "{colors.chip-ink}"
+    typography: "{typography.meta}"
     rounded: "{rounded.none}"
     padding: "0.08rem 0.3rem"
 ---
 
 # Design System: wipboard
 
-> **Scope: the Worker dashboard only** (`worker/src/render.ts`). The whole system is one
-> inline `STYLE` constant in that file: no stylesheet, no framework, no build step, no client
+> **Scope: the Worker dashboard only** (`worker/src/render.ts`). The whole system is one inline
+> `STYLE` template literal in that file: no stylesheet, no framework, no build step, no client
 > fetch, no external font. The CLI's terminal table deliberately has no design doc; its column
 > rules live beside the code that prints them.
 
 ## Overview
 
-**Creative North Star: "The Proof Sheet"**
+**Creative North Star: "The Control Room"**
 
-This is a darkroom contact sheet: the whole roll printed on one sheet, read at arm's length,
-with the frames that are lying to you crossed out in grease pencil. A contact sheet exists to
-answer one question, "what have I actually got", from a single object rather than from a list,
-and it is honest by construction that it is a print of a moment rather than the negatives.
-That last part is the product's own confession about staleness, which is why the world fits.
+This is a dark-field instrument panel, not a document. The page's job is to answer three
+questions as numbers before a single project name is read: how old is this snapshot, how much of
+the board is lying to you, and where does the mass sit. Those three answers are the readout strip
+across the top. Everything under it is detail, laid out as a field of small lit cards rather than
+a column of status paragraphs.
 
-The sheet's tone does the work before any word is read. Every frame prints at a ground set by
-how long it has been since that project's last commit, on a fixed six-step density ramp, so
-the sheet's overall shade is the board's shape. The sheet is then cut in two: **working on**
-leads, **the rest** follows, and the cut is the page's main hierarchy. One saturated ink exists
-on the page, a grease-pencil wax, and it carries condition and nothing else. Everything else is
-paper, ink, silver and rebate.
+**There is one scheme and it is lit.** `color-scheme: dark`, no `prefers-color-scheme` branch, no
+light twin. The reason is recorded at the token block and is the strongest rule in the file: two
+palettes meant every colour had to be decided and re-checked twice, and that is exactly how the
+single saturated ink was silently lost in the light scheme on 2026-11-04 while the dark scheme
+looked perfect. An instrument has a lit face. There is no second palette to keep true.
 
-Both schemes are first-class and the file carries two full palettes. The light scheme is a
-print on the bench; the dark scheme is the same sheet on a light table, where the dense frames
-are the ones that glow. Density still means distance from the ground in both, so the sheet's
-shape reads identically either way. The dark scheme is the common case: a phone, in the dark,
-for about four seconds. The world's earlier warm rendition (cream paper, sepia, beige) was
-built and rejected on 2026-11-02; a darkroom is not a beige place, and the shipped rendition
-is the cold end of the same room.
+Colour carries meaning and nothing else. The field, bar, surface and line tones are the chassis.
+One instrument colour (`accent`, `#3ad6c4`) carries recency on each card's left rail and marks
+the values the machine read (branch, commit age, list markers). One alarm (`hot`, `#ff5a42`) is
+reserved for a condition the data actually holds, and is far enough from the accent in hue that
+the two never read as one scale. On a board with nothing suspect and a fresh snapshot there is no
+alarm anywhere, and that is correct.
 
 **Key Characteristics:**
 
-- Ground tone encodes recency on a fixed six-step ramp; it is never computed from the board.
-- One saturated ink (wax), reserved for condition. Everything else is a grey.
-- Square corners everywhere. No radius anywhere in the system.
-- The rebate is the gap: the page shows through between frames and nothing draws a divider.
-- Exactly one text colour inside a frame, at full ink.
-- Machine type (monospace) for everything the machine stamped; the UI face for human text.
-- One motion in the whole system, and it is the sheet coming up in the developer.
+- One scheme, dark, with no light counterpart to keep in sync.
+- Recency is a four-pixel rail down a card's left edge on a fixed six-step ramp, never a ground
+  tone and never computed from the current board.
+- Two meaning colours only: accent for recency and machine values, alarm for conditions.
+- Square corners everywhere. No `border-radius` anywhere in the system.
+- No shadows at all. Depth is the chassis tone stack: field, bar, surface.
+- Machine type (monospace) for every value the machine stamped; the device UI face for human text.
+- Every card states what is happening in one line, with its depth behind a plain `<details>`.
+- One motion in the system, and it is only the rail coming up.
 
 ## Colors
 
-Cold darkroom greys with a single saturated mark: unexposed paper, full ink, a silver tier for
-anything outside a frame, a rebate hairline, and six grounds that are the same surface at six
-exposures.
+A cold dark chassis in four steps, one instrument colour, one alarm, and a six-step recency rail
+that runs from the instrument colour down to nearly the card's own border.
 
 ### Primary
 
-- **Wax** (`#a8231a` light / `#ff6250` dark): grease pencil, the only saturated ink on the
-  page. It is the strike through a suspect frame's stage and frame number, the suspect count in
-  the stamp block, a stale exposure stamp and its note, the focus ring, and the selection
-  highlight. Nothing else is ever this colour. The light value is **measured, not chosen**: the
-  strike is a non-text mark and needs 3:1 against whichever ramp step it is drawn on. The
-  previous `#c62f22` reached only 2.49:1 on `d5`, which put the weakest mark on the stalest
-  frames, the ones likeliest to be suspect. The shipped value clears 3.2:1 on `d5` and 6.3:1 on
-  the paper.
+- **Instrument Teal** (`#3ad6c4`): the panel's own colour. It is the lit end of the recency rail,
+  the branch name, the commit age in a log line, the drawn list markers, the drawer's plus and
+  minus marks, the focus ring, and the selection fill. **9.7:1 on a card**, measured. It never
+  means "important" and never decorates a heading.
+
+### Secondary
+
+- **Alarm** (`#ff5a42`): the condition colour. It is a stale snapshot's age and note, the suspect
+  tag's fill, the inverted stage chip and flags on a suspect card, and that card's rail. Measured
+  at **5.7:1 on a card** as a mark and **6.0:1 as text on the bar**. Nothing that is not a
+  condition the data holds is ever drawn in it.
+- **Alarm Ink** (`#120503`): the only text colour that ever sits on an alarm fill.
 
 ### Neutral
 
-- **Paper** (`#eef1f4` light / `#0b0d10` dark): unexposed stock. The page behind everything,
-  and the colour showing through the grid gap between frames.
-- **Ink** (`#11151a` light / `#e8edf2` dark): the single text colour inside a frame, the
-  wordmark, the tally counts, the branch name, and the section rule and its label.
-- **Silver** (`#5d6671` light / `#8a95a3` dark): the tier that exists **only outside a frame**,
-  where the ground is always the paper: the edge strip, the tally labels, the age note, the
-  caption's git line, the commit log, the list dashes, the scrollbar.
-- **Rebate** (`#ccd3da` light / `#2a313b` dark): the 1px hairline. The edge strip's underline,
-  the project page's block rules, the inset outline on an unexposed frame and the empty panel,
-  the underline colour on a frame name, and the fill behind inline `code`.
-- **The density ramp** (`d0` through `d5`): six steps away from the paper, fresh to stale.
-  `d0` is under a day, `d1` under three days, `d2` under a week, `d3` under a month, `d4` under
-  ninety days, `d5` beyond that. The light ramp's dense end stops at a mid grey rather than
-  travelling as far as the dark ramp travels light, so there is headroom under both the wax and
-  the single text ink at the dense end. A frame with no git, or a repo with no commits, prints
-  as `dx`: transparent paper with a rebate outline, because its age is unknown rather than
-  late.
+- **Field** (`#070b10`): the page behind everything, and the gap showing through between cards.
+- **Bar** (`#0c131b`): the chrome strip and the readout strip, and each tally tile. One step up
+  from the field, which is how the head reads as the instrument's own housing.
+- **Surface** (`#101a24`): a card, and every panel. Two steps up from the field.
+- **Line** (`#1d2c3a`): the 1px hairline, the 2px section rule, the tally's 1px grid gaps, the
+  scrollbar thumb, a card's border, the rail's own fallback, and the underline under a card name.
+- **Text** (`#e8f0f6`): every primary string. The age readout, a tally count, a project name, a
+  note, a section label.
+- **Dim** (`#8396a6`): the recessed tier. The chrome strip, tally labels, the age note, a card's
+  meta line and git line, the drawer summary, commit subjects, provenance lines.
+- **Chip** (`#1b2a38`) and **Chip Ink** (`#a9bccb`): the tag pair, used for the stage chip, the
+  flags, and inline `code`.
+- **The recency rail** (`r0` through `r5`): six fixed steps from the instrument colour to nearly
+  the card border. `r0` is under a day since last commit, `r1` under three days, `r2` under a
+  week, `r3` under a month, `r4` under ninety days, `r5` beyond that. A card with no git, or a
+  repo with no commits, keeps the `line` fallback.
 
 ### Named Rules
 
-**The One Ink Rule.** There is exactly one saturated colour in the system and it reports a
-condition the data actually holds. It is never used for emphasis, branding, a heading, a link,
-or because a region looked flat. On a board with nothing suspect and a fresh snapshot, the page
-is entirely grey, and that is correct.
+**The One Scheme Rule.** There is one palette and it is the lit one. Do not add a
+`prefers-color-scheme` branch, a light twin, or a per-token light value. Two palettes mean every
+colour is decided twice and re-checked twice, and the second one silently rots: that is precisely
+how the saturated ink went missing from the light scheme on 2026-11-04. If a value needs changing
+there is exactly one place to change it.
 
-**The Density Is Recency Rule.** A frame's ground is a fixed function of its last commit, on a
-ramp of six constant steps. It is never a gradient computed across the current board, or the
-same project would print differently on a different day, and the sheet would stop being
-comparable with itself. Density is also never used to mean anything else: not stage, not
-priority, not suspicion.
+**The Alarm Reports, It Never Emphasises.** `hot` is drawn only where the data holds a condition:
+a snapshot over a day old, a suspect card. It is never a heading colour, a brand colour, a link
+colour, or a way to wake up a region that looked flat.
 
-**The One Text Colour Inside A Frame Rule.** Text on a density ground is full ink, always, and
-the six grounds all clear WCAG 2.2 AA against it. A muted grey tier was tried inside frames on
-2026-11-02 and removed the same day: a second text colour has to clear all six steps, a grey
-that does is no longer muted, and it failed AA at the dense end in both schemes. The silver
-tier survives only outside the frames. Do not reintroduce a muted colour inside a frame without
-re-checking it against `d5`.
+**The Rail Has No Fresh Fallback Rule.** The rail defaults to the card's own border colour
+(`var(--rail, var(--line))`). A card that has lost its density class must read as "age unknown",
+never as "committed minutes ago". That is the one lie this page cannot tell, and it is why the
+fallback is the dead value rather than `r0`.
 
-**The No Condition By Colour Alone Rule.** Every condition ships on at least two channels, and
-the words are the first one. The suspect state has three: the struck stage, the struck frame
-number, and the literal `!` among the flags, with the wax only agreeing. The exposure stamp's
-tone is never rendered without its plain-language note. PRODUCT.md holds this page to WCAG 2.2
-AA and these states are the entire value of the page.
+**The Dim End Is Exempt Because The Text Carries It.** `r5` sits deliberately close to the card
+and does not reach 3:1 against it. This is allowed only because the rail is never the sole
+carrier: the same fact is printed as text ("23d") in that card's own meta line. If the rail ever
+becomes the only channel for something, it has to be re-measured before it ships.
 
 ## Typography
 
 **Display Font:** none purchased or fetched. `ui-monospace, SFMono-Regular, Menlo, monospace`
-carries every machine role, including the display role.
-**Body Font:** `system-ui, -apple-system, "Segoe UI", sans-serif` at 16px/1.4, with
-`font-variant-numeric: tabular-nums` on the whole body so every column of ages lines up.
-**Label/Mono Font:** the same monospace stack, at six sizes.
+carries every machine role including the largest one.
+**Body Font:** `system-ui, -apple-system, "Segoe UI", sans-serif` at 14px/1.4, with
+`font-variant-numeric: tabular-nums` set on the whole body so every column of ages lines up.
+**Label/Mono Font:** the same monospace stack, at seven sizes from .68rem down to .58rem.
 
-**Character:** two stacks, split by who wrote the text. Machine type is wide-tracked, uppercase
-and small for furniture, and large and tight for the one number that matters. Human text (a
+**Character:** two stacks, split by who wrote the text. Machine type is small, uppercase and
+wide-tracked for furniture and large and tight for the numbers in the readout. Human text (a
 project name, a note, a next item) is the device's own UI face, so it reads as writing on the
-sheet rather than as more stamped data. System stacks are a **pinned constraint**: the page is
-one self-contained HTML response, and an external font would be a fetch it cannot make.
+panel rather than as more stamped data. System stacks are a **pinned constraint**: the page is one
+self-contained HTML response and an external font would be a fetch it cannot make.
 
 ### Hierarchy
 
-- **Display** (mono, 700, `clamp(2.3rem, 13vw, 3.4rem)`, line-height .95, tracking -.035em):
-  the exposure stamp, which is the snapshot's age. Nothing else, on any surface, ever.
-- **Count** (mono, 700, 1.05rem, tracking .02em): the suspect count under the stamp. One
-  element, one per page.
-- **Headline** (mono, 700, .78rem, tracking .18em, uppercase): the two section labels, over a
-  full-ink rule.
-- **Title** (UI face, 650, .95rem, line-height 1.2): a project name. Rises to 1.4rem on a
-  project's own page, which is the only size change in the whole type ramp.
-- **Body** (UI face, 400, 16px/1.4): the frame's caption note at .82rem/1.35, the project
-  page's note at 1rem capped at 42rem, panel prose at full size, next items at .82rem/1.3.
-- **Label** (mono, 400, .7rem, tracking .14em, uppercase): the edge strip, the back link, the
-  project page's block rules. The tally runs one notch smaller at .72rem/.1em.
-- **Meta** (mono, 400, .68rem): a frame's head (number and stage, tracking .1em), its metadata
-  line, and the caption's git line.
-- **Mono micro** (mono, 400, .66rem/1.45): the recent-commit log, rising to .78rem on a project
-  page. Smaller still at .62rem with .18em tracking for the `next` label and the `+2 more`
-  line.
+- **Readout** (mono, 700, `clamp(2rem, 9vw, 2.9rem)`, line-height 1, tracking -.04em): the
+  snapshot's age. Nothing else, on any surface, ever.
+- **Tile count** (mono, 700, `clamp(1.3rem, 4.5vw, 1.9rem)`, line-height 1, tracking -.03em): a
+  stage count in the tally. Second largest on the page, by design.
+- **Title** (UI face, 700, 1rem, line-height 1.2, tracking -.01em): a project name. Rises to
+  1.5rem on that project's own page, the only size change in the ramp.
+- **Headline** (mono, 700, .66rem, tracking .24em, uppercase): the two section labels, over a 2px
+  `line` rule, with the section's count pushed right in `dim`.
+- **Tag** (mono, 700, .68rem, tracking .14em, uppercase): the suspect tag under the readout. One
+  element, at most one per page.
+- **Strip** (mono, .66rem, tracking .22em, uppercase): the chrome strip, where the wordmark runs
+  at .3em, and the back link at .18em.
+- **Stamped** (mono, .64rem, tracking .1em): a card's head row, number and stage.
+- **Meta** (mono, .62rem): a card's meta line (age, time in stage, flags) and its git line.
+- **Micro** (mono, 700 or 400, .58rem to .6rem, tracking .16em to .2em, uppercase): the stage
+  chip, tally labels, the drawer summary, the `next` heading and the project page's block
+  headings.
+- **Log** (mono, .64rem/1.45): the commit log, rising to .74rem on a project page.
+- **Human text** (UI face): a note at .78rem/1.35 (.95rem on a project page, capped at 42rem), a
+  next item at .76rem/1.35 (.88rem/1.4 on a project page), the age note at .72rem capped at 30ch,
+  panel prose at the body size.
 
 ### Named Rules
 
-**The Stamp Outranks Everything Rule.** The snapshot age is set larger than the wordmark and
-larger than every project name, on every surface that exists, including a single project's
-page. A reader who takes one fact away must take this one, because a dashboard that silently
-shows yesterday is the exact failure this product exists to prevent. Never let another element
-outgrow it, and never render a surface without it.
+**The Readout Outranks Everything Rule.** The snapshot age is set larger than the wordmark and
+larger than every project name, on every surface that exists, including a single project's page
+and every empty, missing and mismatch state. A reader who takes one fact away must take this one,
+because a dashboard that silently shows yesterday is the exact failure this product prevents.
+Never let another element outgrow it, and never render a surface without it.
 
-**The Hierarchy Without A Second Colour Rule.** Inside a frame, rank is carried by size, weight
-and tracking only. If something needs to recede, make it smaller or lighter, never greyer.
+**The Monospace Means Machine Rule.** Monospace marks what the machine stamped or the reader must
+type: ages, card numbers, stages, flags, branch names, counts, paths, commands. A project name and
+a note are human writing and stay in the UI face even though a terminal would set them in mono.
 
-**The Monospace Means Machine Rule.** Monospace marks what the machine stamped or the reader
-must type: ages, frame numbers, stages, flags, branch names, counts, commands. A project name
-and a note are human writing and stay in the UI face even though a terminal would set them in
-mono.
+**The Counts Align Rule.** Tally tiles are `column-reverse`, count above label, so the row of
+counts can be read across without reading a single label. Any new tile joins that row rather than
+inventing its own stack order.
 
 ## Layout
 
-The page is a sheet, not a document. Body padding is `1rem .9rem 2.5rem`, rising to
-`1.5rem 1.5rem 3rem` above 48rem, capped at 86rem and centred above 70rem.
+The body has no horizontal padding of its own: each region sets its own `1.1rem` gutter, rising to
+`1.5rem` above 48rem, with `3rem` of air under the last card.
 
-The head is an edge strip (wordmark, "contact sheet", host pushed right by `margin-left: auto`)
-over a rebate hairline, then the stamp block: the exposure stamp with its note and the suspect
-count on the left (`flex: 1 1 11rem`), the stage tally on the right as a column of
-label/count rows. Then the two sections, each a full-ink rule carrying its label and its count,
-then the sheet itself.
+The head is two strips stacked. First the chrome strip (wordmark, the panel's subtitle, the host
+pushed right by `margin-left: auto`) on `bar` over a `line` hairline. Then the readout strip, also
+on `bar`: the age and its note and the suspect tag on the left, the stage tally on the right. That
+strip is stacked on a phone (`minmax(0, 1fr)`, `.9rem` gap, with the age block divided by a bottom
+hairline) and goes side by side from **34rem** (`auto minmax(0, 1fr)`, `1.4rem` gap, the divider
+rotating to a right border). Above **70rem** the tally column is capped at `46rem`. Four tally
+tiles plus the age do not fit across 375px, and shipping them side by side at every width ran them
+off the right edge of the device this page is most often read on.
 
-**Flow is columnar, not row-based.** The sheet is a CSS multicolumn list, so it reads top to
-bottom down each column. The payload arrives sorted, stalest first, and that order is the thing
-telling you which project to pick up; a row-flow grid would put frame 2 beside frame 1 and turn
-the ranking into a zigzag. Columns: 2 on any phone from 22rem, 3 at 48rem, 4 at 70rem, with the
-lead section one step wider each time (1, 2, 3) because its frames carry depth. Column gap
-`.5rem`, `.6rem` in the lead section, `.65rem` above 48rem; cells are `break-inside: avoid`
-with `.5rem` (then `.65rem`) below.
+The tally is a one-row grid (`grid-auto-flow: column`, `grid-auto-columns: 1fr`) whose 1px gaps
+show `line` through from the list background, so the tile dividers are gaps rather than borders.
 
-Each frame is a fixed stack of furniture in fixed positions: head (number left, stage right,
-baseline-aligned), name, metadata line, then in the lead section only a `next` block and a
-four-commit log. The caption (note, log, the capped-depth line, git line) prints **below** the
-frame in the rebate, the way a caption is written in a proof sheet's margin, indented `.55rem`
-from the left, so an absent note never changes the frame's own shape.
+The board is then cut in two: **working on** leads, **the rest** follows, each introduced by a
+section rule carrying its label and count. Each section is a CSS grid,
+`repeat(auto-fill, minmax(260px, 1fr))` with a `10px` gap (`300px` and `12px` in the lead
+section, `12px` everywhere above 48rem).
 
-Spacing is tight and runs on a sub-rem scale: `.15`, `.25`, `.45`, `.5`, `.6`, `.9`, `1rem`,
-with `1.5rem` and `2.5rem` reserved for the two large cuts (the project page's blocks, and the
-air above a section rule). Any arbitrary user string, a name, a note, a next item, a commit
+Each card is a column flex: the frame block (`.6rem .75rem .5rem`) holding head row, name and meta
+line, then the caption block pushed to the bottom with `margin-top: auto` (`0 .75rem .6rem`)
+holding the note, the git line and the drawer. The card carries a 1px `line` border and a 4px left
+rail (6px at single width). Any arbitrary user string, a name, a note, a next item, a commit
 subject, an uncommitted path, carries `overflow-wrap: anywhere`.
+
+Breakpoints: **34rem** (readout goes side by side), **48rem** (gutters to 1.5rem, grid gap to
+12px), **70rem** (tally column capped at 46rem).
 
 ### Named Rules
 
-**The Column Flow Rule.** The sheet flows down each column, never across rows, at every width.
-The payload's order is a ranking and the layout must not scramble it. Multicolumn also commits
-to no row count, which is why it survives from 22rem to 86rem without a second layout.
+**The Readout Strip Is The Hierarchy Rule.** The page's main hierarchy move is the strip, not the
+cards: the three facts you can act on are answered as numbers at the top, and everything below is
+detail. A new fact that belongs to the whole board goes in the strip, and a new fact about one
+project goes on that card, never the reverse.
 
-**The Cut Rule.** The sheet is cut into exactly two sections, and the cut is the page's main
-hierarchy: what you are inside leads, everything else follows. Both sections keep payload order
-internally, and frame numbers are assigned **before** the split, so a frame number always means
-the same rank it means in the terminal and moving a project between sections never renumbers
-it. The section label is machine type at full ink over an ink rule with air above it: it was
-silver at .7rem over a rebate rule until 2026-11-02, which is the edge strip's own treatment,
-and made the second section read as the sheet continuing rather than as a second sheet.
+**The Row Flow Trade Rule.** The board is a row-flow grid, and the multicolumn layout it replaced
+read payload rank straight down each column. **That property is genuinely lost**: in row flow card
+2 sits beside card 1 and the ranking zigzags. It was traded on purpose. Rank stays legible because
+every card prints its own zero-padded number, and a board that reads as one instrument at a glance
+was worth more than a ranking that survives a column break. If rank ever has to be exact again,
+this grid rule is the thing to revisit, not the card.
 
-**The Stated Cap Rule.** A phone caps a lead frame's depth at two next items and two commits,
-because six lead frames at four and four put roughly 3000px between the stamp and "the rest".
-The cap is **stated** by a `+2 next · +2 recent` line, never silent: a block that quietly drops
-two of its four items is indistinguishable from a project that only had two. Nothing is capped
-at 48rem and above, and the line is hidden there.
+**The Cut Rule.** The board is cut into exactly two sections and the cut is a partition, never a
+re-sort: both sections keep payload order internally, and numbers are assigned **before** the
+split, so a card number always means the same rank it means in the terminal and moving a project
+between sections never renumbers it.
 
 ## Elevation & Depth
 
-Flat, with tone as the entire depth model. There is no drop shadow, no offset shadow and no
-blur anywhere in the system. A frame separates from the page because it is printed at a
-different density than the paper, and the gap between frames is unexposed paper rather than a
-drawn divider.
+Flat. **There is no `box-shadow` anywhere in the file**, no drop shadow, no offset shadow, no
+blur, and no `filter`. Depth is a three-step chassis tone stack: `field` is the page, `bar` is the
+housing at the top, `surface` is a card or a panel, each separated by a 1px `line` border where
+they meet. A card reads as sitting on the field because it is a lighter chassis tone inside a
+hairline, and the gap between cards is field, not a drawn divider.
 
-### Shadow Vocabulary
-
-- **Rebate outline** (`box-shadow: inset 0 0 0 1px var(--rebate)`): the only `box-shadow` in
-  the file, used twice. It is a hairline border drawn inside the box, not elevation: on an
-  unexposed `dx` frame, and on the empty / mismatch / missing panel.
+The only other depth cue in the system is the rail, and it reads as a lit edge rather than a
+height.
 
 ### Named Rules
 
-**The Density Is Not Elevation Rule.** A denser frame is older, not nearer. Depth must never
-become a second channel for condition, and a suspect frame is never raised, outlined or
-shadowed; it is struck.
+**The No Shadow Rule.** This system has no shadow vocabulary at all, not even an inset hairline.
+Separation is a tone step plus a 1px border. Do not introduce a shadow token to make a card
+"pop", and do not reach for an offset shadow: that is a different world's device, and this one is
+not that world.
 
-**The Rebate Is The Divider Rule.** Separation is the gap, not a line. No frame draws a border.
-The only rules on the page are the edge strip's hairline, the two section rules, and the
-project page's block rules.
+**The Rail Is Not Elevation Rule.** A brighter rail means more recent, not nearer. Depth must
+never become a second channel for recency or for condition, and a suspect card is never raised,
+glowed or outlined: its chip inverts, its rail goes to alarm, and its flag prints as a word.
 
 ## Shapes
 
-Square. There is no `border-radius` anywhere in the system, on any element, including inline
-`code` and the panels. Frames are rectangles of printed ground; the sheet is a grid of them
-separated by paper.
+Square, at every scale. There is no `border-radius` anywhere in the system, on any element,
+including the chips, the alarm tag, the panels and inline `code`. Every form is a rectangle: a
+card is a rectangle of `surface`, a tally tile is a rectangle of `bar`, a chip is a filled
+rectangle of text.
 
-The only non-rectilinear form in the system is the grease-pencil strike: a pseudo-element 2px
-tall, inset `-.18em` at both ends so it overhangs the word, sitting at 46% height and rotated
-`-1.8deg`. It is drawn rather than a browser `line-through` on purpose. A tidy machine rule
-through a word is not a grease pencil, and the point of this world is that the marks on it were
-made by hand.
+The recurring silhouette is **a rectangle with one thick lit edge**: 4px on the board, 6px at
+single width, always on the left, always carrying recency or alarm.
 
-Lists draw their own marker: a dash hung outside the text (`content: "-\00a0"` in silver, with
-`padding-left: .95rem` and `text-indent: -.95rem`), in both the frame's `next` block and the
-project page's lists. The browser's own marker rendered as hollow rings inside the sheet and
-filled discs on the project page, and a small hollow ring is uncomfortably close to the wax
-ring this world rejected.
+Two marks are drawn rather than inherited. Lists set their own marker, a right-pointing small
+triangle (`\25B8` plus a non-breaking space) in accent, hung outside the text with
+`padding-left: .9rem` and `text-indent: -.9rem`, because the browser's own marker renders
+differently in a nested list and a top-level one on a page that already themes its selection, its
+scrollbar and its focus ring. The drawer replaces its disclosure triangle with a floated `+` that
+becomes a minus sign (`\2212`) when open, in accent.
 
 ### Named Rules
 
-**The Hand Mark Rule.** Any mark that represents a human judgement is drawn, slightly off-axis,
-and overhangs what it marks. Any mark that represents a machine value is square, aligned and
-tabular. Do not let the two swap.
+**The No Radius Rule.** Nothing in this system is rounded. A rounded corner reads as a soft
+content card, and the page is an instrument face made of panels.
 
-**The No Radius Rule.** Nothing in this system is rounded. A rounded corner is a card, and a
-card is the vertical stack of status panels this page was redesigned to stop being.
+**The One Lit Edge Rule.** A rectangle gets at most one coloured edge and it is the left one. Do
+not put the rail on another side, do not add a second coloured edge, and do not colour a card's
+remaining three borders.
 
 ## Components
 
-### The Exposure Stamp
+### The Readout
 
-The signature component and the loudest thing on every surface. The snapshot's age at display
-size, in one of three ink weights on a single ink rather than three hues: silver when under an
-hour, full ink between an hour and a day, wax beyond a day or when the timestamp is unreadable.
-Directly beneath it, in the same tone, a plain-language note capped at 34ch ("Nothing has been
-pushed since. Every frame below is at least this old."). The fresh state has no note.
+The signature component and the loudest thing on every surface. The snapshot's age at readout
+size, in one of two colours: `text` while it is under a day old, alarm beyond a day or when the
+timestamp is unreadable. Directly beneath it, in the same colour, a plain-language note capped at
+30ch ("Nothing has been pushed since. Every card below is at least this old."). An hour-old
+snapshot gets the note but not the alarm colour, because an hour is worth noticing and a day is
+worth distrusting, and an alarm that fires at an hour means nothing by the time it is earned.
 
-- **Tone and words are produced together** by `snapshotAge` in `render.ts` and are never
+- **Colour and words are produced together** by `snapshotAge` in `render.ts` and are never
   rendered apart.
 - It leads the board, every project page, and every empty, missing and mismatch state, so the
   page's shape never changes between states and no surface can silently show yesterday.
 
-### The Suspect Count
+### The Suspect Tag
 
-One line under the stamp, wax, mono, 700 at 1.05rem: `7 of 19 suspect`. An order of magnitude
-below the stamp, because the stamp still outranks everything, but loud enough to be read in the
-same glance. It is not a second channel for the flag; it is the one place the sheet's own shape
-is stated rather than seen. Rendered only when the count is non-zero.
+One filled alarm tag under the readout: `7 of 19 suspect`, mono 700 at .68rem with .14em
+tracking, uppercase, `on-hot` on `hot`, `.28rem .5rem` of padding, square. A filled tag rather
+than coloured words, because the page the author rejected is the one that looks calm while a third
+of the board is lying, and a tag is the loudest this can be without outranking the readout. The
+number and the word carry it; the fill only agrees. Rendered only when the count is non-zero.
 
-### The Edge Strip and The Tally
+### The Chrome Strip and The Tally
 
-The edge strip is the sheet's margin: wordmark, the words "contact sheet", and the host pushed
-to the right edge, all silver mono at .7rem with .14em tracking, uppercase, over a rebate
-hairline. Machine type here is measurement, not decoration: every value in the strip is
-machine-stamped.
+The chrome strip is the instrument's housing: wordmark, subtitle, and the host pushed to the right
+edge, all `dim` mono at .66rem with .22em tracking, uppercase, on `bar` over a `line` hairline.
 
-The tally is a column of stage/count rows in the same machine type, counts in full ink and
-bold, printed in the CLI's fixed stage cycle order rather than payload order, so the rows never
-move and a column of counts stays comparable. Counts only: the page is read-only and nothing
-filters.
+The tally is a single row of tiles on `bar`, split by 1px `line` gaps, each tile count above label
+(`column-reverse`), counts in `text` and bold at tile-count size, labels in `dim` micro. Printed
+in the CLI's fixed stage cycle order rather than payload order, so the rows never move and a row
+of counts stays comparable. Counts only: the page is read-only and nothing filters.
 
-### Frames
+### Cards
 
-The sheet's unit, and the whole system in miniature.
+The board's unit and the whole system in miniature.
 
-- **Shape:** square, no border, `.45rem .55rem .5rem` padding (`.7rem .8rem .75rem` at single
-  width on a project page).
-- **Ground:** one of the six ramp steps by recency, or transparent paper with a rebate outline
-  when unexposed.
-- **Furniture, identical and in the same positions in every frame:** head (zero-padded frame
-  number left, stage uppercase right), name at title size, metadata line (time since last
-  commit, time in stage, flags).
-- **Lead frames** additionally carry a `next` block and up to four recent commits. The compact
-  frame is the same frame with those two blocks absent, which is what makes both sections read
-  as one sheet.
-- **Flags** are full-weight ink, never wax: wax text inside a frame has to clear contrast
-  against all six steps and does not at the dense end, and the word itself already carries the
-  condition. They use the CLI's exact strings (`!`, `stuck 41d`, `dirty`, `^3`) so the two
+- **Shape:** square, `surface` ground, 1px `line` border, 4px left rail, `.6rem .75rem .5rem`
+  padding in the frame block (`.9rem 1rem .7rem` and a 6px rail at single width).
+- **Rail:** one of the six recency steps by last commit, set through `--rail` by a
+  `:has(.d0)`-style hook, or the `line` fallback when the age is unknown.
+- **Furniture, identical and in the same positions in every card:** head row (zero-padded number
+  left in `dim`, stage chip right), name at title size, meta line (time since last commit, time in
+  stage, flags).
+- **Stage chip:** `chip-ink` on `chip`, uppercase micro, `.14rem .4rem`. The stage is a chip
+  because it is the one field on this page a human typed and the only one that can be wrong:
+  giving it an edge says it is a claim.
+- **Flags** are chips too, in the CLI's exact strings (`!`, `stuck 41d`, `dirty`, `^3`) so the two
   views never need translating.
-- **Suspect:** a wax strike through the stage word, and a second through the frame number. The
-  number is struck **only on the sheet**: the project page reuses the same slot for the branch
-  name, where a line through `main` would read as "this branch is gone". This replaced a drawn
-  wax ring around the whole frame on 2026-11-02; six rings on nineteen frames read as damage
-  rather than as a flag, and the ring said "something is wrong here" where the strike says the
-  specific thing that is wrong. Do not bring the ring back.
-- **Motion:** one animation exists in the system. `develop`, 520ms on
-  `cubic-bezier(.16, 1, .3, 1)`, staggered 22ms per frame index, fading the ground up from the
-  paper. It runs from an already-visible default (only the ground moves, so every word is
-  readable from the first frame), and it is wrapped in `prefers-reduced-motion: no-preference`.
-  Nothing else on the page transitions.
+- **The git line** is the one line every card states without being opened: branch in accent and
+  bold, commit subject and changed count in `dim`, or the words "no git".
+- **Suspect** keeps three channels and only one is colour: the stage chip and the flags invert to
+  a filled alarm tag, the rail goes to alarm regardless of age, and `!` prints among the flags as
+  a word. The suspect rail rule is declared after the recency rules deliberately, so alarm wins.
+- **Motion:** one animation exists in the system. `develop`, `520ms` on
+  `cubic-bezier(.16, 1, .3, 1)`, staggered `22ms` per card index via an inline `--i`, fading the
+  card up from `opacity: .4` with the rail starting at `line`. Only the rail moves in colour, so
+  every word is readable from the first frame, and the whole block is wrapped in
+  `prefers-reduced-motion: no-preference`. Nothing else on the page animates or transitions.
 
-### Captions
+### The Drawer
 
-The text below a frame, in the rebate: the note, the recent-commit log, the stated-cap line,
-and the git line (branch in full ink, commit subject and changed count in silver). Indented
-`.55rem` from the frame's left edge. Nothing here has a ground of its own, which is why silver
-is allowed.
+Why every card can afford to be short. What is happening now is always on the face of the card;
+the depth behind it is one press away, inside a plain `<details>` over a `line` hairline. The
+summary is `dim` micro, uppercase, and **counts what is inside** (`2 next · 4 recent`) rather than
+teasing the first line of it, because a count is the one summary that cannot be misread as the
+whole thing. Its marker is a floated accent `+` that becomes a minus when open, hover lifts the
+summary to `text`, and focus draws a 2px accent ring at 2px offset.
+
+`<details>` is the whole mechanism: **no script**, keyboard-operable, and it survives with its
+summary visible if the element is ever unstyled. Inside it, the `next` list (accent triangle
+markers, .76rem human text) and the commit log (mono .64rem, age in accent in a fixed 2.6rem
+right-aligned column, subject in `dim`).
 
 ### Links
 
-The page was read-only and link-free until 2026-11-02; a frame's name now opens that project's
-page, and the project page carries a back link.
-
-- **Default:** colour inherited from the text, underline kept with `.18em` offset and 1px
-  thickness, rebate-coloured under a frame name.
-- **Hover:** underline thickens to 2px. No colour change, no movement.
-- **Focus:** a 2px wax outline at 2px offset, chosen because wax is the one value visible on
-  every density step.
+- **Default:** colour inherited from the text, underline kept at 1px with `.18em` offset, in
+  `line` under a card name.
+- **Hover:** underline thickens to 2px; a card name shifts to accent. No movement.
+- **Focus:** a 2px accent outline at 2px offset, the one ring in the system.
 
 ### Panels (empty, version mismatch, missing project)
 
-Transparent ground with a rebate inset outline, `1rem` padding, capped at 44ch, square. Each
-leads with the exposure stamp so the page's shape never changes, and each states the exact
-command that fixes it in inline `code` (rebate fill, no radius).
+`surface` ground, 1px `line` border, a 4px `line` left edge so a panel reads as a card with no
+age, `1rem` padding, capped at 44ch, square. Each leads with the readout so the page's shape never
+changes, and each states the exact command that fixes it in inline `code` (`chip-ink` on `chip`,
+no radius).
 
 ### The Project Page
 
-One frame at `46rem`, with the name at 1.4rem, then the blocks the board had no room for:
+One card at full width (`max-width: 46rem`, 6px rail, name at 1.5rem), then the blocks the board
+has no room for, open rather than behind a drawer, because that is why the reader came here:
 `next` with its provenance line, `recent` uncapped, and `uncommitted` paths. Block headings are
-silver label-type rules. Nothing here is capped, because this page exists precisely for the
-reader who wanted more than the frame had room for.
+`dim` micro over a `line` hairline. The card's head row reuses the number slot for the branch
+name. Nothing here is capped.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** keep the exposure stamp the largest element on every surface, larger than the wordmark
-  and every project name, and never render a surface without it.
-- **Do** keep text inside a frame at full ink, and build hierarchy from size, weight and
-  tracking.
-- **Do** keep silver for what sits on the paper: edge strip, tally, captions, logs, notes.
-- **Do** re-check both the wax and the single text ink against `d5` in both schemes if any ramp
-  step moves.
-- **Do** give every condition a word. Colour agrees with the words; it never carries them
+- **Do** keep one palette. All colour decisions live in the single `:root` block and are made
+  once.
+- **Do** keep the readout the largest element on every surface, larger than the wordmark and every
+  project name, and never render a surface without it.
+- **Do** keep recency on the rail, on the fixed six-step ramp, computed from the last commit
   alone.
-- **Do** flow the sheet down its columns, at every width.
-- **Do** state any cap you apply, the way the `+2 next` line does.
-- **Do** use the CLI's exact flag strings so the terminal and the sheet never disagree.
+- **Do** leave the rail's fallback at the dead `line` value, so a missing class reads as "age
+  unknown".
+- **Do** keep accent for recency and machine-read values, and alarm for conditions the data holds.
+- **Do** give every condition a word. The suspect state ships on three channels and only one of
+  them is colour.
+- **Do** state the alarm colour's measured contrast when a value moves: accent is 9.7:1 on a card,
+  alarm is 5.7:1 on a card and 6.0:1 as text on the bar.
+- **Do** keep a card's face to one line about what is happening, with depth in the `<details>`.
+- **Do** use the CLI's exact flag strings so the terminal and the board never disagree.
+- **Do** check any new region at 375px before shipping it; that is the width the page is read at.
 - **Do** keep the whole system inline in `render.ts`: no framework, no build step, no client
   fetch, no external font. The page must work with nothing but the HTML that arrives.
-- **Do** design dark as its own print. It is the common case, not an inversion.
 
 ### Don't:
 
-- **Don't** introduce a second saturated colour, or use wax for anything that is not a
-  condition the data holds.
-- **Don't** put wax text on a density ground. Wax stays where its ground is known: the strike,
-  the focus ring, and the stamp block on the paper.
-- **Don't** add a muted text tier inside a frame.
-- **Don't** compute the density ramp from the current board, or reuse density to mean anything
-  other than recency.
-- **Don't** add a drop or offset shadow. The only `box-shadow` permitted is the 1px inset
-  rebate hairline.
+- **Don't** add a `prefers-color-scheme` branch, a light palette, or a second value per token.
+- **Don't** introduce a third meaning colour, or use the alarm for emphasis, branding, a heading
+  or a link.
+- **Don't** let the rail be the only carrier of a fact; if it ever is, re-measure it against the
+  card first.
+- **Don't** compute the recency ramp from the current board, or reuse the rail to mean stage,
+  priority or anything but recency.
+- **Don't** add a shadow of any kind. This system has no shadow vocabulary, and an offset shadow
+  belongs to a world this one is not.
 - **Don't** add a `border-radius` anywhere.
-- **Don't** draw a border around a frame. The gap is the divider.
-- **Don't** mark a suspect frame with a ring, a tint, or elevation. It is struck.
-- **Don't** add a second motion, or let motion start from an invisible state.
-- **Don't** re-sort the payload, re-number frames after the section split, or make anything
-  interactive beyond the project link. The dashboard is read-only by product decision.
-- **Don't** interpolate a value into the markup without `escapeHtml`. The rule lives as a
-  comment at that function.
+- **Don't** put a coloured edge anywhere but the card's left side, or add a second one.
+- **Don't** mark a suspect card by raising, glowing or outlining it.
+- **Don't** add a second animation, add a transition, or let motion start from an invisible state.
+- **Don't** add script to the drawer, or to anything else. `<details>` is the mechanism.
+- **Don't** re-sort the payload, renumber cards after the section split, or make anything
+  interactive beyond the project link and the drawer. The dashboard is read-only by product
+  decision.
+- **Don't** interpolate a value into the markup without `escapeHtml`. That rule lives as a comment
+  at the function.

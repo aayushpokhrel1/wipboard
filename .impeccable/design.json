@@ -3,215 +3,246 @@
   "generatedAt": "2026-11-04T00:00:00Z",
   "title": "Design System: wipboard",
   "extensions": {
-    "scope": "worker/src/render.ts only. The whole system is one inline STYLE constant in that file. The CLI's terminal table is deliberately undocumented.",
+    "scope": "worker/src/render.ts only. The whole system is one inline STYLE template literal in that file. The CLI's terminal table is deliberately undocumented.",
     "colorMeta": {
-      "paper": {
+      "field": {
         "role": "neutral",
-        "displayName": "Unexposed Paper",
-        "canonical": "#eef1f4",
-        "darkValue": "#0b0d10",
-        "purpose": "The page behind everything, and the colour showing through the gap between frames.",
-        "tonalRamp": ["#11151a", "#2a313b", "#495360", "#6b7684", "#9aa5b2", "#ccd3da", "#eef1f4", "#f8fafb"]
+        "displayName": "Field",
+        "canonical": "#070b10",
+        "purpose": "The page behind everything, and the gap showing through between cards.",
+        "tonalRamp": ["#040609", "#070b10", "#0c131b", "#101a24", "#172835", "#27455b", "#5b8099", "#c3d6e2"]
       },
-      "ink": {
+      "bar": {
         "role": "neutral",
-        "displayName": "Full Ink",
-        "canonical": "#11151a",
-        "darkValue": "#e8edf2",
-        "purpose": "The single text colour inside a frame, the wordmark, the tally counts, the section rule.",
-        "tonalRamp": ["#05070a", "#11151a", "#232a33", "#3a434e", "#5d6671", "#8a95a3", "#ccd3da", "#eef1f4"]
+        "displayName": "Housing Bar",
+        "canonical": "#0c131b",
+        "purpose": "The chrome strip, the readout strip, and each tally tile. One chassis step above the field.",
+        "tonalRamp": ["#050810", "#0c131b", "#121d28", "#1a2a39", "#24394c", "#36566f", "#6a90a9", "#cadbe6"]
       },
-      "silver": {
+      "surface": {
         "role": "neutral",
-        "displayName": "Silver",
-        "canonical": "#5d6671",
-        "darkValue": "#8a95a3",
-        "purpose": "The tier that exists only outside a frame, where the ground is always the paper: edge strip, tally labels, age note, captions, commit log, list dashes.",
-        "tonalRamp": ["#171b20", "#2b313a", "#424a55", "#5d6671", "#737e8b", "#a3acb8", "#c9d0d8", "#e8ebef"]
+        "displayName": "Card Surface",
+        "canonical": "#101a24",
+        "purpose": "A card and every panel. Two chassis steps above the field.",
+        "tonalRamp": ["#070c11", "#101a24", "#17262f", "#20323f", "#2b4354", "#3f6075", "#7498ae", "#cfdee8"]
       },
-      "wax": {
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#1d2c3a",
+        "purpose": "The 1px border and hairline, the 2px section rule, the tally's 1px gaps, the scrollbar thumb, the rail's dead fallback, the underline under a card name.",
+        "tonalRamp": ["#0b1118", "#131e28", "#1d2c3a", "#283d50", "#365168", "#4c7190", "#80a0bb", "#d2e0ea"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Panel Text",
+        "canonical": "#e8f0f6",
+        "purpose": "Every primary string: the age readout, a tally count, a project name, a note, a section label.",
+        "tonalRamp": ["#121a21", "#22303b", "#3a4d5c", "#566d7e", "#8396a6", "#adbfcc", "#d2dfe9", "#e8f0f6"]
+      },
+      "dim": {
+        "role": "neutral",
+        "displayName": "Recessed Type",
+        "canonical": "#8396a6",
+        "purpose": "The chrome strip, tally labels, the age note, a card's meta and git lines, the drawer summary, commit subjects, provenance lines.",
+        "tonalRamp": ["#141c23", "#27333d", "#3c4b58", "#546674", "#6d8091", "#8396a6", "#adbcc8", "#dde4ea"]
+      },
+      "accent": {
         "role": "primary",
-        "displayName": "Grease Pencil Wax",
-        "canonical": "#a8231a",
-        "darkValue": "#ff6250",
-        "purpose": "The only saturated ink on the page. Condition and nothing else: the suspect strike, the suspect count, a stale exposure stamp, the focus ring, the selection highlight.",
-        "measured": "Light value is measured, not chosen: the strike is a non-text mark needing 3:1 against any ramp step. Clears 3.2:1 on d5 and 6.3:1 on the paper. The previous #c62f22 reached only 2.49:1 on d5.",
-        "tonalRamp": ["#2e0906", "#4d100b", "#6e1812", "#8d1d15", "#a8231a", "#d14034", "#ff6250", "#ffb0a6"]
+        "displayName": "Instrument Teal",
+        "canonical": "#3ad6c4",
+        "purpose": "The panel's own colour. The lit end of the recency rail, the branch name, a commit age in a log line, the drawn list markers, the drawer's plus and minus, the focus ring, the selection fill.",
+        "measured": "9.7:1 on a card (#101a24).",
+        "tonalRamp": ["#082a27", "#0d3f3a", "#13564f", "#1a6f66", "#228d81", "#2bb4a4", "#3ad6c4", "#a6f0e7"]
       },
-      "rebate": {
-        "role": "neutral",
-        "displayName": "Rebate Hairline",
-        "canonical": "#ccd3da",
-        "darkValue": "#2a313b",
-        "purpose": "The 1px hairline: edge strip underline, block rules, the inset outline on an unexposed frame and on panels, the underline under a frame name, the fill behind inline code.",
-        "tonalRamp": ["#141820", "#2a313b", "#414a56", "#5f6a77", "#8d97a3", "#aeb7c0", "#ccd3da", "#e6eaee"]
+      "hot": {
+        "role": "secondary",
+        "displayName": "Alarm",
+        "canonical": "#ff5a42",
+        "purpose": "Condition only: a stale snapshot's age and note, the suspect tag's fill, the inverted stage chip and flags on a suspect card, and that card's rail.",
+        "measured": "5.7:1 on a card (#101a24) as a mark, 6.0:1 as text on the bar (#0c131b). Far enough from the accent in hue that the two never read as one scale.",
+        "tonalRamp": ["#2d0a05", "#4a1109", "#6c190e", "#8f2415", "#b8321e", "#e0442c", "#ff5a42", "#ffb3a6"]
       },
-      "density-ramp": {
+      "on-hot": {
+        "role": "secondary",
+        "displayName": "Alarm Ink",
+        "canonical": "#120503",
+        "purpose": "The only text colour that ever sits on an alarm fill.",
+        "tonalRamp": ["#0a0302", "#120503", "#200b07", "#35130d", "#4f1e15", "#733225", "#a85f4f", "#dcb3a9"]
+      },
+      "chip": {
         "role": "neutral",
-        "displayName": "The Density Ramp",
-        "canonical": "#e4e8ed",
-        "purpose": "A frame's ground, set by days since its last commit: d0 under 1d, d1 under 3d, d2 under 7d, d3 under 30d, d4 under 90d, d5 beyond. Fixed steps, never computed from the current board. A frame with no git prints as dx: transparent paper with a rebate outline.",
-        "tonalRamp": ["#e4e8ed", "#dae0e7", "#cdd5de", "#bfc8d3", "#b2bcc8", "#a6b0bb"],
-        "darkRamp": ["#11141a", "#171c24", "#1f252f", "#28303c", "#323b49", "#3d4757"]
+        "displayName": "Chip Ground",
+        "canonical": "#1b2a38",
+        "purpose": "The tag fill: the stage chip, the flags, and inline code.",
+        "tonalRamp": ["#0a1017", "#111b25", "#1b2a38", "#263b4d", "#345065", "#49698c", "#7d9ab7", "#d0dde8"]
+      },
+      "chip-ink": {
+        "role": "neutral",
+        "displayName": "Chip Ink",
+        "canonical": "#a9bccb",
+        "purpose": "Text on a chip ground.",
+        "tonalRamp": ["#161f27", "#293743", "#3f515f", "#586c7c", "#748a9a", "#92a7b8", "#a9bccb", "#dde6ed"]
+      },
+      "recency-rail": {
+        "role": "primary",
+        "displayName": "The Recency Rail",
+        "canonical": "#3ad6c4",
+        "purpose": "The 4px rail down each card's left edge (6px at single width), set by days since last commit: r0 under 1d, r1 under 3d, r2 under 7d, r3 under 30d, r4 under 90d, r5 beyond. Fixed steps, never computed from the current board. A card with no git or no commits keeps the line fallback, so a lost class reads as age unknown rather than fresh.",
+        "measured": "The dim end (r5, #20383c) does not reach 3:1 against the card and is exempt because the same fact is printed as text in the card's meta line. If the rail ever becomes the sole channel for something, it has to be re-measured.",
+        "tonalRamp": ["#3ad6c4", "#2faea0", "#2b8b84", "#286b69", "#244f52", "#20383c"]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Exposure Stamp", "purpose": "The snapshot's age, and nothing else, on any surface. The largest element on every page by a wide margin." },
-      "count": { "displayName": "Suspect Count", "purpose": "The one line stating how many frames are lying to you. An order of magnitude below the stamp." },
-      "headline": { "displayName": "Section Label", "purpose": "The two section labels, full ink over an ink rule." },
-      "title": { "displayName": "Project Name", "purpose": "A project name in the device's UI face. 1.4rem on a project's own page." },
-      "body": { "displayName": "Human Text", "purpose": "Notes, next items, panel prose. The UI face, because a human wrote it." },
-      "label": { "displayName": "Edge Code", "purpose": "Edge strip, tally, back link, project-page block rules. Machine type as measurement." },
-      "meta": { "displayName": "Frame Furniture", "purpose": "Frame head (number, stage), metadata line, git line." },
-      "micro": { "displayName": "Micro Label", "purpose": "The next label and the stated-cap line." },
-      "mono": { "displayName": "Commit Log", "purpose": "The recent-commit sequence. .78rem on a project page." }
+      "readout": { "displayName": "The Readout", "purpose": "The snapshot's age, and nothing else, on any surface. The largest element on every page." },
+      "tile-count": { "displayName": "Tally Tile Count", "purpose": "A stage count in the readout strip's tile row. Second largest thing on the page, by design." },
+      "title": { "displayName": "Project Name", "purpose": "A project name on the board, in the device UI face because a human wrote it." },
+      "title-single": { "displayName": "Project Name, Single", "purpose": "The same name on that project's own page. The only size change in the ramp." },
+      "body": { "displayName": "Body", "purpose": "Panel prose. 14px/1.4 with tabular-nums set on the whole body so every column of ages lines up." },
+      "note": { "displayName": "Note", "purpose": "A project's note on a card. Rises to 0.95rem capped at 42rem on a project page." },
+      "headline": { "displayName": "Section Rule", "purpose": "The two section labels, over a 2px line rule, with the count pushed right in dim." },
+      "tag": { "displayName": "Alarm Tag", "purpose": "The suspect count tag under the readout. At most one per page." },
+      "strip": { "displayName": "Chrome Strip", "purpose": "The housing strip: wordmark at 0.3em tracking, subtitle, host. Also the back link at 0.18em." },
+      "stamped": { "displayName": "Card Head", "purpose": "A card's head row: zero-padded number and stage chip." },
+      "meta": { "displayName": "Card Meta", "purpose": "A card's meta line (age, time in stage, flags) and its git line." },
+      "micro": { "displayName": "Micro Label", "purpose": "The stage chip, tally labels, the drawer summary, the next heading, project-page block headings." },
+      "log": { "displayName": "Commit Log", "purpose": "The recent-commit log, age in accent in a fixed 2.6rem right-aligned column. 0.74rem on a project page." }
     },
-    "shadows": [
-      {
-        "name": "rebate-outline",
-        "value": "inset 0 0 0 1px #ccd3da",
-        "purpose": "The only box-shadow in the system, used twice: an unexposed (dx) frame and the empty / mismatch / missing panel. It is a hairline border drawn inside the box, never elevation. Dark: inset 0 0 0 1px #2a313b."
-      }
-    ],
+    "shadows": [],
+    "shadowPolicy": "There is no box-shadow anywhere in the file, not even an inset hairline, and no filter or blur. Depth is a three-step chassis tone stack (field, bar, surface) separated by 1px line borders. Do not add a shadow token.",
     "motion": [
-      {
-        "name": "develop",
-        "value": "develop 520ms cubic-bezier(.16, 1, .3, 1) backwards; animation-delay: calc(var(--i) * 22ms)",
-        "purpose": "The only animation in the system. Frames rise to their density once, staggered down the sheet, from an already-visible default (@keyframes develop { from { background-color: var(--paper); } }). Only the ground moves, so every word is readable from the first frame. Wrapped in @media (prefers-reduced-motion: no-preference)."
-      }
+      { "name": "develop", "value": "develop 520ms cubic-bezier(.16, 1, .3, 1) backwards", "purpose": "The only animation in the system. The board comes up once from opacity .4 with the rail starting at line, staggered 22ms per card index via an inline --i, inside prefers-reduced-motion: no-preference. Only the rail moves in colour, so every word is readable from the first frame." },
+      { "name": "develop-duration", "value": "520ms", "purpose": "The --develop custom property. The one duration token in the system." },
+      { "name": "develop-stagger", "value": "calc(var(--i) * 22ms)", "purpose": "Per-card delay. Set inline because the board's length is data, not a constant." }
     ],
+    "transitionPolicy": "Nothing on the page transitions. There is one animation and it runs once on load.",
     "breakpoints": [
-      { "name": "two-up", "value": "22rem", "purpose": "The sheet goes to 2 columns; the lead section stays at 1. Below the narrowest phone still shipping, so every phone gets two columns." },
-      { "name": "desk", "value": "48rem", "purpose": "3 columns (lead 2), wider body padding, and the lead frames' depth cap is lifted; the +N more line is hidden." },
-      { "name": "wide", "value": "70rem", "purpose": "4 columns (lead 3), body capped at 86rem and centred." }
+      { "name": "readout-split", "value": "34rem", "purpose": "The readout strip goes from stacked to age beside tally. Four tiles plus the age do not fit across 375px." },
+      { "name": "wide", "value": "48rem", "purpose": "Gutters 1.1rem to 1.5rem, board gap 10px to 12px." },
+      { "name": "capped", "value": "70rem", "purpose": "The tally column is capped at 46rem so the tiles stop stretching." }
     ]
   },
   "components": [
     {
-      "name": "Exposure Stamp",
+      "name": "The Readout",
       "kind": "custom",
-      "refersTo": "exposure-stamp",
-      "description": "The snapshot's age, the loudest element on every surface. Three ink weights on one ink, never rendered without its plain-language note.",
-      "html": "<div class=\"ds-stamp\"><p class=\"ds-age ds-age-stale\">5d ago</p><p class=\"ds-age-note ds-age-note-stale\">Nothing has been pushed since. Every frame below is at least this old.</p><p class=\"ds-alarm\">7 of 19 suspect</p></div>",
-      "css": ".ds-stamp { background: #eef1f4; padding: .9rem .9rem 1rem; font-variant-numeric: tabular-nums; } .ds-age { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(2.3rem, 13vw, 3.4rem); font-weight: 700; line-height: .95; letter-spacing: -.035em; color: #5d6671; } .ds-age-warn { color: #11151a; } .ds-age-stale { color: #a8231a; } .ds-age-note { margin: .5rem 0 0; max-width: 34ch; font: 400 .88rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #5d6671; } .ds-age-note-stale { color: #a8231a; } .ds-alarm { margin: .55rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.05rem; font-weight: 700; letter-spacing: .02em; color: #a8231a; }"
+      "refersTo": "readout-age",
+      "description": "The snapshot's age at readout size with its plain-language note. Leads every surface, including empty and error states.",
+      "html": "<div class=\"ds-readout\"><p class=\"ds-readout-age ds-stale\">2d ago</p><p class=\"ds-readout-note ds-stale\">Nothing has been pushed since. Every card below is at least this old.</p></div>",
+      "css": ".ds-readout { padding: 1rem 1.1rem; background: var(--bar, #0c131b); border-bottom: 1px solid var(--line, #1d2c3a); } .ds-readout-age { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(2rem, 9vw, 2.9rem); font-weight: 700; line-height: 1; letter-spacing: -.04em; color: var(--text, #e8f0f6); } .ds-readout-age.ds-stale { color: var(--hot, #ff5a42); } .ds-readout-note { margin: .35rem 0 0; max-width: 30ch; font-size: .72rem; color: var(--dim, #8396a6); } .ds-readout-note.ds-stale { color: var(--hot, #ff5a42); }"
     },
     {
-      "name": "Edge Strip",
-      "kind": "nav",
-      "refersTo": "edge-strip",
-      "description": "The sheet's margin: wordmark, sheet descriptor, host pushed to the right edge, over a rebate hairline. Machine type as measurement.",
-      "html": "<div class=\"ds-edge\"><h1>wipboard</h1><span>contact sheet</span><span class=\"ds-host\">yusha</span></div>",
-      "css": ".ds-edge { display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: baseline; padding-bottom: .5rem; border-bottom: 1px solid #ccd3da; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: #5d6671; background: #eef1f4; } .ds-edge h1 { font: inherit; margin: 0; color: #11151a; } .ds-edge .ds-host { margin-left: auto; }"
+      "name": "The Suspect Tag",
+      "kind": "chip",
+      "refersTo": "alarm-tag",
+      "description": "A filled alarm tag stating how much of the board is lying to you. Rendered only when the count is non-zero.",
+      "html": "<p class=\"ds-alarm\">7 of 19 suspect</p>",
+      "css": ".ds-alarm { display: inline-block; margin: .5rem 0 0; padding: .28rem .5rem; background: var(--hot, #ff5a42); color: var(--on-hot, #120503); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }"
     },
     {
       "name": "Stage Tally",
-      "kind": "custom",
-      "refersTo": "tally",
-      "description": "A column of stage counts in the CLI's fixed cycle order, so the rows never move and the counts stay comparable. Counts only, never filters.",
-      "html": "<ul class=\"ds-tally\"><li><span>idea</span> <b>2</b></li><li><span>building</span> <b>9</b></li><li><span>shipped</span> <b>6</b></li><li><span>parked</span> <b>2</b></li></ul>",
-      "css": ".ds-tally { margin: 0; padding: .5rem; list-style: none; background: #eef1f4; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: #5d6671; font-variant-numeric: tabular-nums; } .ds-tally li { display: flex; gap: .6rem; justify-content: space-between; padding: .1rem 0; } .ds-tally b { color: #11151a; font-weight: 700; }"
+      "kind": "nav",
+      "refersTo": "tally-tile",
+      "description": "One row of instrument tiles, count above label, printed in the CLI's fixed stage cycle order so the row never moves. Tile dividers are 1px grid gaps, not borders.",
+      "html": "<ul class=\"ds-tally\"><li><span>idea</span> <b>3</b></li><li><span>building</span> <b>7</b></li><li><span>testing</span> <b>2</b></li><li><span>parked</span> <b>5</b></li></ul>",
+      "css": ".ds-tally { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 1px; margin: 0; padding: 0; list-style: none; background: var(--line, #1d2c3a); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; } .ds-tally li { display: flex; flex-direction: column-reverse; justify-content: center; gap: .2rem; padding: .5rem .7rem; background: var(--bar, #0c131b); } .ds-tally li span { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--dim, #8396a6); } .ds-tally b { font-size: clamp(1.3rem, 4.5vw, 1.9rem); font-weight: 700; line-height: 1; letter-spacing: -.03em; color: var(--text, #e8f0f6); }"
     },
     {
       "name": "Section Rule",
-      "kind": "custom",
+      "kind": "nav",
       "refersTo": "section-rule",
-      "description": "The cut between 'working on' and 'the rest'. Machine type at full ink over an ink rule, with air above it that no other rule has.",
+      "description": "The cut between what you are inside and everything else. Label left, count right, over a 2px hairline.",
       "html": "<h2 class=\"ds-section\">working on <span>6</span></h2>",
-      "css": ".ds-section { display: flex; align-items: baseline; gap: .6rem; margin: 2.5rem 0 .6rem; padding-bottom: .35rem; border-bottom: 1px solid #11151a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #11151a; } .ds-section span { margin-left: auto; color: #5d6671; font-weight: 400; }"
+      "css": ".ds-section { display: flex; align-items: center; gap: .6rem; margin: 1.4rem 0 .6rem; padding-bottom: .4rem; border-bottom: 2px solid var(--line, #1d2c3a); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .66rem; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: var(--text, #e8f0f6); } .ds-section span { margin-left: auto; color: var(--dim, #8396a6); }"
     },
     {
-      "name": "Frame",
+      "name": "Card",
       "kind": "card",
-      "refersTo": "frame",
-      "description": "The sheet's unit. Square, borderless, printed at a ground set by recency. The furniture is identical and in the same positions in every frame.",
-      "html": "<li class=\"ds-cell\" style=\"--i:1\"><div class=\"ds-frame ds-d1\"><div class=\"ds-head\"><span class=\"ds-num\">02</span><span class=\"ds-stage\">building</span></div><p class=\"ds-name\"><a href=\"#\">Portfolio</a></p><p class=\"ds-meta\"><span>23d</span><span>32d in stage</span><span class=\"ds-flag\">stuck 32d</span><span class=\"ds-flag\">dirty</span></p></div><div class=\"ds-caption\"><p class=\"ds-note\">static site, uncommitted changes</p><p class=\"ds-git\"><span class=\"ds-branch\">main</span><span class=\"ds-subject\">docs: fix the entry shape so it stops drifting</span><span>2 changed</span></p></div></li>",
-      "css": ".ds-cell { list-style: none; break-inside: avoid; margin-bottom: .5rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; color: #11151a; } .ds-frame { position: relative; padding: .45rem .55rem .5rem; background: #e4e8ed; } .ds-d1 { background: #dae0e7; } .ds-d3 { background: #bfc8d3; } .ds-d5 { background: #a6b0bb; } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; } .ds-name a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; text-decoration-color: #ccd3da; } .ds-name a:hover { text-decoration-thickness: 2px; } .ds-name a:focus-visible { outline: 2px solid #a8231a; outline-offset: 2px; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .02em; } .ds-flag { font-weight: 700; } .ds-caption { padding: .25rem .1rem 0 .55rem; } .ds-note { margin: 0; font-size: .82rem; line-height: 1.35; overflow-wrap: anywhere; } .ds-git { display: flex; flex-wrap: wrap; gap: 0 .5rem; margin: .15rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; color: #5d6671; } .ds-branch { color: #11151a; } .ds-subject { overflow-wrap: anywhere; }"
+      "refersTo": "card",
+      "description": "The board's unit. Square, one lit left rail carrying recency, fixed furniture in fixed positions, and the git line it always states without being opened.",
+      "html": "<li class=\"ds-card ds-r2\"><div class=\"ds-face\"><div class=\"ds-head\"><span class=\"ds-num\">04</span><span class=\"ds-stage\">building</span></div><p class=\"ds-name\"><a href=\"#\">wipboard</a></p><p class=\"ds-meta\"><span>4d</span> <span>12d in stage</span> <span class=\"ds-flag\">dirty</span></p></div><div class=\"ds-caption\"><p class=\"ds-note\">Dashboard shipped; the rail replaced the ground tone.</p><p class=\"ds-git\"><span class=\"ds-branch\">main</span> <span>the sheet becomes an instrument</span> <span>3 changed</span></p></div></li>",
+      "css": ".ds-card { display: flex; flex-direction: column; list-style: none; background: var(--surface, #101a24); border: 1px solid var(--line, #1d2c3a); border-left: 4px solid var(--rail, var(--line, #1d2c3a)); font: 14px/1.4 system-ui, -apple-system, \"Segoe UI\", sans-serif; font-variant-numeric: tabular-nums; color: var(--text, #e8f0f6); max-width: 300px; } .ds-card.ds-r0 { --rail: #3ad6c4; } .ds-card.ds-r2 { --rail: #2b8b84; } .ds-card.ds-r5 { --rail: #20383c; } .ds-face { padding: .6rem .75rem .5rem; } .ds-head { display: flex; align-items: center; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .64rem; letter-spacing: .1em; } .ds-num { font-weight: 700; color: var(--dim, #8396a6); } .ds-stage { margin-left: auto; padding: .14rem .4rem; background: var(--chip, #1b2a38); color: var(--chip-ink, #a9bccb); font-weight: 700; font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; } .ds-name { margin: .2rem 0 .25rem; font-size: 1rem; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; } .ds-name a { color: var(--text, #e8f0f6); text-decoration-color: var(--line, #1d2c3a); text-underline-offset: .18em; text-decoration-thickness: 1px; } .ds-name a:hover { color: var(--accent, #3ad6c4); text-decoration-thickness: 2px; } .ds-name a:focus-visible { outline: 2px solid var(--accent, #3ad6c4); outline-offset: 2px; } .ds-meta { display: flex; flex-wrap: wrap; gap: .15rem .45rem; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; color: var(--dim, #8396a6); } .ds-flag { padding: .06rem .28rem; background: var(--chip, #1b2a38); color: var(--chip-ink, #a9bccb); font-weight: 700; letter-spacing: .06em; } .ds-caption { margin-top: auto; padding: 0 .75rem .6rem; } .ds-note { margin: .45rem 0 0; font-size: .78rem; line-height: 1.35; color: var(--text, #e8f0f6); overflow-wrap: anywhere; } .ds-git { display: flex; flex-wrap: wrap; gap: 0 .45rem; margin: .45rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; color: var(--dim, #8396a6); } .ds-branch { color: var(--accent, #3ad6c4); font-weight: 700; }"
     },
     {
-      "name": "Frame, suspect",
+      "name": "Card, suspect",
       "kind": "card",
-      "refersTo": "frame-d5",
-      "description": "A frame whose stage may be a lie, printed dense. Three channels, only one of which is colour: the struck stage, the struck frame number, and the literal ! among the flags. The strike is drawn, two degrees off axis, overhanging the word at both ends.",
-      "html": "<div class=\"ds-frame ds-d5 ds-suspect\"><div class=\"ds-head\"><span class=\"ds-num\">05</span><span class=\"ds-stage\">shipped</span></div><p class=\"ds-name\">Chess_Coach</p><p class=\"ds-meta\"><span>1d</span><span>32d in stage</span><span class=\"ds-flag\">!</span><span class=\"ds-flag\">stuck 32d</span></p></div>",
-      "css": ".ds-frame { position: relative; padding: .45rem .55rem .5rem; background: #e4e8ed; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; color: #11151a; } .ds-d5 { background: #a6b0bb; } .ds-suspect .ds-stage, .ds-suspect .ds-num { position: relative; } .ds-suspect .ds-stage::after, .ds-suspect .ds-num::after { content: ''; position: absolute; left: -.18em; right: -.18em; top: 46%; height: 2px; background: #a8231a; transform: rotate(-1.8deg); } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .02em; } .ds-flag { font-weight: 700; }"
+      "refersTo": "chip-stage-suspect",
+      "description": "The stage may be a lie, so the claim itself changes. Three channels and only one is colour: the chip and flags invert to a filled alarm tag, the rail goes to alarm regardless of age, and \"!\" prints among the flags as a word.",
+      "html": "<li class=\"ds-card ds-suspect\"><div class=\"ds-face\"><div class=\"ds-head\"><span class=\"ds-num\">11</span><span class=\"ds-stage\">shipped</span></div><p class=\"ds-name\">old-api</p><p class=\"ds-meta\"><span>96d</span> <span>96d in stage</span> <span class=\"ds-flag\">!</span> <span class=\"ds-flag\">stuck 96d</span></p></div></li>",
+      "css": ".ds-card.ds-suspect { --rail: var(--hot, #ff5a42); } .ds-card.ds-suspect .ds-stage, .ds-card.ds-suspect .ds-flag { background: var(--hot, #ff5a42); color: var(--on-hot, #120503); }"
     },
     {
-      "name": "Frame, unexposed",
-      "kind": "card",
-      "refersTo": "frame-unexposed",
-      "description": "A project with no git, or a repo with no commits. Paper with a rebate outline rather than a density: its age is unknown, not late, and printing it as stale would be a guess.",
-      "html": "<div class=\"ds-frame ds-dx\"><div class=\"ds-head\"><span class=\"ds-num\">17</span><span class=\"ds-stage\">idea</span></div><p class=\"ds-name\">scratch-notes</p><p class=\"ds-meta\"><span>-</span><span>32d in stage</span></p></div>",
-      "css": ".ds-frame { position: relative; padding: .45rem .55rem .5rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-dx { background: transparent; box-shadow: inset 0 0 0 1px #ccd3da; } .ds-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; letter-spacing: .1em; } .ds-num { font-weight: 700; } .ds-stage { text-transform: uppercase; } .ds-name { margin: .25rem 0 0; font-size: .95rem; font-weight: 650; line-height: 1.2; } .ds-meta { display: flex; flex-wrap: wrap; gap: .1rem .5rem; margin: .2rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .68rem; }"
-    },
-    {
-      "name": "Depth blocks (next and recent)",
+      "name": "The Drawer",
       "kind": "custom",
-      "refersTo": "log-line",
-      "description": "What the lead section's frames carry and the compact ones do not: the next items inside the frame, the recent commit sequence in the caption, and the line stating what the phone's cap is hiding.",
-      "html": "<div class=\"ds-depth\"><div class=\"ds-next\"><p class=\"ds-next-head\">next</p><ul><li>Restyling surfaces that already work is parked. That covers Potluck and the cook page, not new surfaces.</li><li>The phone app, from Task 18 of its plan.</li></ul></div><ol class=\"ds-log\"><li><span class=\"ds-when\">1d</span><span class=\"ds-what\">chore: the phone release procedure, and a guard that can see the phone app</span></li><li><span class=\"ds-when\">1d</span><span class=\"ds-what\">feat: timers that ring when the phone locked</span></li></ol><p class=\"ds-more\">+2 next &middot; +2 recent</p></div>",
-      "css": ".ds-depth { background: #dae0e7; padding: .5rem .55rem; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-next { margin: .45rem 0 0; } .ds-next-head { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; opacity: .75; } .ds-next ul { list-style: none; margin: .15rem 0 0; padding-left: 0; } .ds-next li { padding-left: .95rem; text-indent: -.95rem; font-size: .82rem; line-height: 1.3; margin-top: .12rem; overflow-wrap: anywhere; } .ds-next li::before { content: '-\\00a0'; color: #5d6671; } .ds-log { margin: .3rem 0 0; padding: 0; list-style: none; } .ds-log li { display: flex; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .66rem; line-height: 1.45; color: #5d6671; } .ds-log .ds-when { flex: 0 0 2.6rem; text-align: right; } .ds-log .ds-what { overflow-wrap: anywhere; } .ds-more { margin: .3rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: #5d6671; }"
+      "refersTo": "drawer-summary",
+      "description": "A plain <details>, no script, keyboard-operable, surviving unstyled. The summary counts what is inside rather than teasing the first line of it.",
+      "html": "<details class=\"ds-drawer\"><summary>2 next \u00b7 4 recent</summary><div class=\"ds-next\"><p class=\"ds-next-head\">next</p><ul><li>document the rail</li><li>re-measure the dim end</li></ul></div><ol class=\"ds-log\"><li><span class=\"ds-when\">2h</span> <span>the sheet becomes an instrument</span></li><li><span class=\"ds-when\">1d</span> <span>say what a stale CLI looks like</span></li></ol></details>",
+      "css": ".ds-drawer { margin: .5rem 0 0; border-top: 1px solid var(--line, #1d2c3a); font: 14px/1.4 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: var(--text, #e8f0f6); } .ds-drawer > summary { padding: .4rem 0 .1rem; cursor: pointer; list-style: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase; color: var(--dim, #8396a6); } .ds-drawer > summary::-webkit-details-marker { display: none; } .ds-drawer > summary::after { content: \"+\"; float: right; font-weight: 700; color: var(--accent, #3ad6c4); } .ds-drawer[open] > summary::after { content: \"\\2212\"; } .ds-drawer > summary:hover { color: var(--text, #e8f0f6); } .ds-drawer > summary:focus-visible { outline: 2px solid var(--accent, #3ad6c4); outline-offset: 2px; } .ds-next { margin: .4rem 0 0; } .ds-next-head { margin: 0 0 .15rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--dim, #8396a6); } .ds-next ul { list-style: none; margin: .1rem 0 0; padding-left: 0; } .ds-next li { padding-left: .9rem; text-indent: -.9rem; font-size: .76rem; line-height: 1.35; margin-top: .14rem; overflow-wrap: anywhere; } .ds-next li::before { content: \"\\25B8\\00a0\"; color: var(--accent, #3ad6c4); } .ds-log { margin: .45rem 0 0; padding: 0; list-style: none; } .ds-log li { display: flex; gap: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .64rem; line-height: 1.45; color: var(--dim, #8396a6); } .ds-when { flex: 0 0 2.6rem; text-align: right; color: var(--accent, #3ad6c4); }"
     },
     {
-      "name": "Empty Panel",
+      "name": "Panel",
       "kind": "custom",
       "refersTo": "empty-panel",
-      "description": "Nothing pushed yet, an unreadable payload version, or a project name that is not on the board. One unexposed frame at sheet width, stating the exact command that fixes it.",
-      "html": "<div class=\"ds-empty\"><p>Nothing has been pushed to this dashboard.</p><p>Run <code class=\"ds-code\">wipboard push</code> on the machine that holds the repos.</p></div>",
-      "css": ".ds-empty { margin: 1.25rem 0 0; padding: 1rem; max-width: 44ch; box-shadow: inset 0 0 0 1px #ccd3da; font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #11151a; } .ds-empty p { margin: 0 0 .6rem; } .ds-empty p:last-child { margin-bottom: 0; } .ds-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: #ccd3da; padding: .08rem .3rem; }"
+      "description": "The empty, version-mismatch and missing-project states. A card with no age: line left edge instead of a rail, and the exact command that fixes it in inline code.",
+      "html": "<div class=\"ds-panel\"><p>The stored payload is a version this Worker does not understand.</p><p>Redeploy the Worker with <code class=\"ds-code\">npx wrangler deploy</code> from <code class=\"ds-code\">worker/</code>.</p></div>",
+      "css": ".ds-panel { padding: 1rem; max-width: 44ch; background: var(--surface, #101a24); border: 1px solid var(--line, #1d2c3a); border-left: 4px solid var(--line, #1d2c3a); font: 14px/1.4 system-ui, -apple-system, \"Segoe UI\", sans-serif; color: var(--text, #e8f0f6); } .ds-panel p { margin: 0 0 .6rem; } .ds-panel p:last-child { margin-bottom: 0; } .ds-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: var(--chip, #1b2a38); color: var(--chip-ink, #a9bccb); padding: .08rem .3rem; }"
     }
   ],
   "narrative": {
-    "northStar": "The Proof Sheet",
-    "overview": "This is a darkroom contact sheet: the whole roll printed on one sheet, read at arm's length, with the frames that are lying to you crossed out in grease pencil. A contact sheet exists to answer one question, \"what have I actually got\", from a single object rather than from a list, and it is honest by construction that it is a print of a moment rather than the negatives. That last part is the product's own confession about staleness, which is why the world fits.\n\nThe sheet's tone does the work before any word is read. Every frame prints at a ground set by how long it has been since that project's last commit, on a fixed six-step density ramp, so the sheet's overall shade is the board's shape. The sheet is then cut in two: working on leads, the rest follows, and the cut is the page's main hierarchy. One saturated ink exists on the page, a grease-pencil wax, and it carries condition and nothing else. Everything else is paper, ink, silver and rebate.\n\nBoth schemes are first-class and the file carries two full palettes. The light scheme is a print on the bench; the dark scheme is the same sheet on a light table, where the dense frames are the ones that glow. Density still means distance from the ground in both, so the sheet's shape reads identically either way. The dark scheme is the common case: a phone, in the dark, for about four seconds. The world's earlier warm rendition (cream paper, sepia, beige) was built and rejected on 2026-11-02; a darkroom is not a beige place, and the shipped rendition is the cold end of the same room.",
+    "northStar": "The Control Room",
+    "overview": "This is a dark-field instrument panel, not a document. The page's job is to answer three questions as numbers before a single project name is read: how old is this snapshot, how much of the board is lying to you, and where does the mass sit. Those three answers are the readout strip across the top. Everything under it is detail, laid out as a field of small lit cards rather than a column of status paragraphs.\n\nThere is one scheme and it is lit. color-scheme: dark, no prefers-color-scheme branch, no light twin. The reason is recorded at the token block and is the strongest rule in the file: two palettes meant every colour had to be decided and re-checked twice, and that is exactly how the single saturated ink was silently lost in the light scheme on 2026-11-04 while the dark scheme looked perfect. An instrument has a lit face. There is no second palette to keep true.\n\nColour carries meaning and nothing else. The field, bar, surface and line tones are the chassis. One instrument colour (accent, #3ad6c4) carries recency on each card's left rail and marks the values the machine read (branch, commit age, list markers). One alarm (hot, #ff5a42) is reserved for a condition the data actually holds, and is far enough from the accent in hue that the two never read as one scale. On a board with nothing suspect and a fresh snapshot there is no alarm anywhere, and that is correct.",
     "keyCharacteristics": [
-      "Ground tone encodes recency on a fixed six-step ramp; it is never computed from the board.",
-      "One saturated ink (wax), reserved for condition. Everything else is a grey.",
-      "Square corners everywhere. No radius anywhere in the system.",
-      "The rebate is the gap: the page shows through between frames and nothing draws a divider.",
-      "Exactly one text colour inside a frame, at full ink.",
-      "Machine type (monospace) for everything the machine stamped; the UI face for human text.",
-      "One motion in the whole system, and it is the sheet coming up in the developer."
+      "One scheme, dark, with no light counterpart to keep in sync.",
+      "Recency is a four-pixel rail down a card's left edge on a fixed six-step ramp, never a ground tone and never computed from the current board.",
+      "Two meaning colours only: accent for recency and machine values, alarm for conditions.",
+      "Square corners everywhere. No border-radius anywhere in the system.",
+      "No shadows at all. Depth is the chassis tone stack: field, bar, surface.",
+      "Machine type (monospace) for every value the machine stamped; the device UI face for human text.",
+      "Every card states what is happening in one line, with its depth behind a plain <details>.",
+      "One motion in the system, and it is only the rail coming up."
     ],
     "rules": [
-      { "name": "The One Ink Rule", "section": "colors", "body": "There is exactly one saturated colour in the system and it reports a condition the data actually holds. It is never used for emphasis, branding, a heading, a link, or because a region looked flat. On a board with nothing suspect and a fresh snapshot, the page is entirely grey, and that is correct." },
-      { "name": "The Density Is Recency Rule", "section": "colors", "body": "A frame's ground is a fixed function of its last commit, on a ramp of six constant steps. It is never a gradient computed across the current board, or the same project would print differently on a different day, and the sheet would stop being comparable with itself. Density is also never used to mean anything else: not stage, not priority, not suspicion." },
-      { "name": "The One Text Colour Inside A Frame Rule", "section": "colors", "body": "Text on a density ground is full ink, always, and the six grounds all clear WCAG 2.2 AA against it. A muted grey tier was tried inside frames on 2026-11-02 and removed the same day: a second text colour has to clear all six steps, a grey that does is no longer muted, and it failed AA at the dense end in both schemes. The silver tier survives only outside the frames. Do not reintroduce a muted colour inside a frame without re-checking it against d5." },
-      { "name": "The No Condition By Colour Alone Rule", "section": "colors", "body": "Every condition ships on at least two channels, and the words are the first one. The suspect state has three: the struck stage, the struck frame number, and the literal ! among the flags, with the wax only agreeing. The exposure stamp's tone is never rendered without its plain-language note. PRODUCT.md holds this page to WCAG 2.2 AA and these states are the entire value of the page." },
-      { "name": "The Stamp Outranks Everything Rule", "section": "typography", "body": "The snapshot age is set larger than the wordmark and larger than every project name, on every surface that exists, including a single project's page. A reader who takes one fact away must take this one, because a dashboard that silently shows yesterday is the exact failure this product exists to prevent. Never let another element outgrow it, and never render a surface without it." },
-      { "name": "The Hierarchy Without A Second Colour Rule", "section": "typography", "body": "Inside a frame, rank is carried by size, weight and tracking only. If something needs to recede, make it smaller or lighter, never greyer." },
-      { "name": "The Monospace Means Machine Rule", "section": "typography", "body": "Monospace marks what the machine stamped or the reader must type: ages, frame numbers, stages, flags, branch names, counts, commands. A project name and a note are human writing and stay in the UI face even though a terminal would set them in mono." },
-      { "name": "The Column Flow Rule", "section": "layout", "body": "The sheet flows down each column, never across rows, at every width. The payload's order is a ranking and the layout must not scramble it. Multicolumn also commits to no row count, which is why it survives from 22rem to 86rem without a second layout." },
-      { "name": "The Cut Rule", "section": "layout", "body": "The sheet is cut into exactly two sections, and the cut is the page's main hierarchy: what you are inside leads, everything else follows. Both sections keep payload order internally, and frame numbers are assigned before the split, so a frame number always means the same rank it means in the terminal and moving a project between sections never renumbers it. The section label is machine type at full ink over an ink rule with air above it: it was silver at .7rem over a rebate rule until 2026-11-02, which is the edge strip's own treatment, and made the second section read as the sheet continuing rather than as a second sheet." },
-      { "name": "The Stated Cap Rule", "section": "layout", "body": "A phone caps a lead frame's depth at two next items and two commits, because six lead frames at four and four put roughly 3000px between the stamp and the rest. The cap is stated by a +2 next line, never silent: a block that quietly drops two of its four items is indistinguishable from a project that only had two. Nothing is capped at 48rem and above, and the line is hidden there." },
-      { "name": "The Density Is Not Elevation Rule", "section": "elevation", "body": "A denser frame is older, not nearer. Depth must never become a second channel for condition, and a suspect frame is never raised, outlined or shadowed; it is struck." },
-      { "name": "The Rebate Is The Divider Rule", "section": "elevation", "body": "Separation is the gap, not a line. No frame draws a border. The only rules on the page are the edge strip's hairline, the two section rules, and the project page's block rules." },
-      { "name": "The Hand Mark Rule", "section": "shapes", "body": "Any mark that represents a human judgement is drawn, slightly off-axis, and overhangs what it marks. Any mark that represents a machine value is square, aligned and tabular. Do not let the two swap." },
-      { "name": "The No Radius Rule", "section": "shapes", "body": "Nothing in this system is rounded. A rounded corner is a card, and a card is the vertical stack of status panels this page was redesigned to stop being." }
+      { "name": "The One Scheme Rule", "body": "There is one palette and it is the lit one. Do not add a prefers-color-scheme branch, a light twin, or a per-token light value. Two palettes mean every colour is decided twice and re-checked twice, and the second one silently rots: that is precisely how the saturated ink went missing from the light scheme on 2026-11-04. If a value needs changing there is exactly one place to change it.", "section": "colors" },
+      { "name": "The Alarm Reports, It Never Emphasises", "body": "hot is drawn only where the data holds a condition: a snapshot over a day old, a suspect card. It is never a heading colour, a brand colour, a link colour, or a way to wake up a region that looked flat.", "section": "colors" },
+      { "name": "The Rail Has No Fresh Fallback Rule", "body": "The rail defaults to the card's own border colour (var(--rail, var(--line))). A card that has lost its density class must read as \"age unknown\", never as \"committed minutes ago\". That is the one lie this page cannot tell, and it is why the fallback is the dead value rather than r0.", "section": "colors" },
+      { "name": "The Dim End Is Exempt Because The Text Carries It", "body": "r5 sits deliberately close to the card and does not reach 3:1 against it. This is allowed only because the rail is never the sole carrier: the same fact is printed as text (\"23d\") in that card's own meta line. If the rail ever becomes the only channel for something, it has to be re-measured before it ships.", "section": "colors" },
+      { "name": "The Readout Outranks Everything Rule", "body": "The snapshot age is set larger than the wordmark and larger than every project name, on every surface that exists, including a single project's page and every empty, missing and mismatch state. A reader who takes one fact away must take this one, because a dashboard that silently shows yesterday is the exact failure this product prevents. Never let another element outgrow it, and never render a surface without it.", "section": "typography" },
+      { "name": "The Monospace Means Machine Rule", "body": "Monospace marks what the machine stamped or the reader must type: ages, card numbers, stages, flags, branch names, counts, paths, commands. A project name and a note are human writing and stay in the UI face even though a terminal would set them in mono.", "section": "typography" },
+      { "name": "The Counts Align Rule", "body": "Tally tiles are column-reverse, count above label, so the row of counts can be read across without reading a single label. Any new tile joins that row rather than inventing its own stack order.", "section": "typography" },
+      { "name": "The Readout Strip Is The Hierarchy Rule", "body": "The page's main hierarchy move is the strip, not the cards: the three facts you can act on are answered as numbers at the top, and everything below is detail. A new fact that belongs to the whole board goes in the strip, and a new fact about one project goes on that card, never the reverse.", "section": "layout" },
+      { "name": "The Row Flow Trade Rule", "body": "The board is a row-flow grid, and the multicolumn layout it replaced read payload rank straight down each column. That property is genuinely lost: in row flow card 2 sits beside card 1 and the ranking zigzags. It was traded on purpose. Rank stays legible because every card prints its own zero-padded number, and a board that reads as one instrument at a glance was worth more than a ranking that survives a column break. If rank ever has to be exact again, this grid rule is the thing to revisit, not the card.", "section": "layout" },
+      { "name": "The Cut Rule", "body": "The board is cut into exactly two sections and the cut is a partition, never a re-sort: both sections keep payload order internally, and numbers are assigned before the split, so a card number always means the same rank it means in the terminal and moving a project between sections never renumbers it.", "section": "layout" },
+      { "name": "The No Shadow Rule", "body": "This system has no shadow vocabulary at all, not even an inset hairline. Separation is a tone step plus a 1px border. Do not introduce a shadow token to make a card \"pop\", and do not reach for an offset shadow: that is a different world's device, and this one is not that world.", "section": "elevation" },
+      { "name": "The Rail Is Not Elevation Rule", "body": "A brighter rail means more recent, not nearer. Depth must never become a second channel for recency or for condition, and a suspect card is never raised, glowed or outlined: its chip inverts, its rail goes to alarm, and its flag prints as a word.", "section": "elevation" },
+      { "name": "The No Radius Rule", "body": "Nothing in this system is rounded. A rounded corner reads as a soft content card, and the page is an instrument face made of panels.", "section": "shapes" },
+      { "name": "The One Lit Edge Rule", "body": "A rectangle gets at most one coloured edge and it is the left one. Do not put the rail on another side, do not add a second coloured edge, and do not colour a card's remaining three borders.", "section": "shapes" }
     ],
     "dos": [
-      "Do keep the exposure stamp the largest element on every surface, larger than the wordmark and every project name, and never render a surface without it.",
-      "Do keep text inside a frame at full ink, and build hierarchy from size, weight and tracking.",
-      "Do keep silver for what sits on the paper: edge strip, tally, captions, logs, notes.",
-      "Do re-check both the wax and the single text ink against d5 in both schemes if any ramp step moves.",
-      "Do give every condition a word. Colour agrees with the words; it never carries them alone.",
-      "Do flow the sheet down its columns, at every width.",
-      "Do state any cap you apply, the way the +2 next line does.",
-      "Do use the CLI's exact flag strings so the terminal and the sheet never disagree.",
-      "Do keep the whole system inline in render.ts: no framework, no build step, no client fetch, no external font. The page must work with nothing but the HTML that arrives.",
-      "Do design dark as its own print. It is the common case, not an inversion."
+      "Do keep one palette. All colour decisions live in the single :root block and are made once.",
+      "Do keep the readout the largest element on every surface, larger than the wordmark and every project name, and never render a surface without it.",
+      "Do keep recency on the rail, on the fixed six-step ramp, computed from the last commit alone.",
+      "Do leave the rail's fallback at the dead line value, so a missing class reads as \"age unknown\".",
+      "Do keep accent for recency and machine-read values, and alarm for conditions the data holds.",
+      "Do give every condition a word. The suspect state ships on three channels and only one of them is colour.",
+      "Do state the alarm colour's measured contrast when a value moves: accent is 9.7:1 on a card, alarm is 5.7:1 on a card and 6.0:1 as text on the bar.",
+      "Do keep a card's face to one line about what is happening, with depth in the <details>.",
+      "Do use the CLI's exact flag strings so the terminal and the board never disagree.",
+      "Do check any new region at 375px before shipping it; that is the width the page is read at.",
+      "Do keep the whole system inline in render.ts: no framework, no build step, no client fetch, no external font. The page must work with nothing but the HTML that arrives."
     ],
     "donts": [
-      "Don't introduce a second saturated colour, or use wax for anything that is not a condition the data holds.",
-      "Don't put wax text on a density ground. Wax stays where its ground is known: the strike, the focus ring, and the stamp block on the paper.",
-      "Don't add a muted text tier inside a frame.",
-      "Don't compute the density ramp from the current board, or reuse density to mean anything other than recency.",
-      "Don't add a drop or offset shadow. The only box-shadow permitted is the 1px inset rebate hairline.",
+      "Don't add a prefers-color-scheme branch, a light palette, or a second value per token.",
+      "Don't introduce a third meaning colour, or use the alarm for emphasis, branding, a heading or a link.",
+      "Don't let the rail be the only carrier of a fact; if it ever is, re-measure it against the card first.",
+      "Don't compute the recency ramp from the current board, or reuse the rail to mean stage, priority or anything but recency.",
+      "Don't add a shadow of any kind. This system has no shadow vocabulary, and an offset shadow belongs to a world this one is not.",
       "Don't add a border-radius anywhere.",
-      "Don't draw a border around a frame. The gap is the divider.",
-      "Don't mark a suspect frame with a ring, a tint, or elevation. It is struck.",
-      "Don't add a second motion, or let motion start from an invisible state.",
-      "Don't re-sort the payload, re-number frames after the section split, or make anything interactive beyond the project link. The dashboard is read-only by product decision.",
-      "Don't interpolate a value into the markup without escapeHtml. The rule lives as a comment at that function."
+      "Don't put a coloured edge anywhere but the card's left side, or add a second one.",
+      "Don't mark a suspect card by raising, glowing or outlining it.",
+      "Don't add a second animation, add a transition, or let motion start from an invisible state.",
+      "Don't add script to the drawer, or to anything else. <details> is the mechanism.",
+      "Don't re-sort the payload, renumber cards after the section split, or make anything interactive beyond the project link and the drawer. The dashboard is read-only by product decision.",
+      "Don't interpolate a value into the markup without escapeHtml. That rule lives as a comment at the function."
     ]
   }
 }
