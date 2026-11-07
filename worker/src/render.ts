@@ -588,6 +588,17 @@ body {
   font-size: .62rem;
   color: var(--dim);
 }
+/* The two ages sit next to each other and both start or end in a number, so
+   "commit 26d" and "35d in stage" ran together as "26d 35d" at phone size on
+   2026-11-07. A gap is not enough separation between two values of the same
+   shape; the flags after them do not need one because a filled chip already
+   separates itself. The divider rides on .in-stage, which is always the second
+   span and always present, so it can never lead the line. */
+.in-stage::before {
+  content: "\\00b7";
+  margin-right: .45rem;
+  color: var(--line);
+}
 .flag {
   padding: .06rem .28rem;
   background: var(--chip);
@@ -694,7 +705,13 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
    in var(--line) until 2026-11-07, which is 1.24:1 on a card: invisible, and
    indistinguishable from antialiasing in a capture. The underline is drawn in
    the accent and sits below the baseline where it cannot touch the glyphs. */
-.name a { color: var(--text); text-decoration-color: var(--accent); text-underline-offset: .22em; }
+/* The padding is the tap target, not decoration. This link is the only route
+   off the board and the stated reader is holding a phone; the text box alone
+   measured 21px tall on 2026-11-07, under WCAG 2.5.8's 24px. It passed only on
+   the spacing exception, which is a thin thing to rest the page's sole
+   navigation on. Padding on an inline box grows the hit area without touching
+   line layout, so nothing moves and the background stays transparent. */
+.name a { color: var(--text); text-decoration-color: var(--accent); text-underline-offset: .22em; padding-block: .1rem; }
 .name a:hover, .name a:focus-visible { color: var(--accent); }
 
 /* A project's own page: one card at full width, then the blocks the board has

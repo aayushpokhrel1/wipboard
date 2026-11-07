@@ -255,4 +255,14 @@ describe("the stylesheet", () => {
     expect(css).toMatch(/:root\s*\{[\s\S]*?--hot:/);
     expect(css).toMatch(/:root\s*\{[\s\S]*?--develop:/);
   });
+
+  // Both of these are invisible in the markup, so no other test can see them
+  // go. They were added on 2026-11-07 after a phone pass: the two ages ran
+  // together as "26d 35d" without the divider, and the only link off the
+  // board measured 21px tall without the padding, under WCAG 2.5.8's 24.
+  it("keeps the divider between the two ages and the link's tap padding", () => {
+    const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
+    expect(css).toMatch(/\.in-stage::before\s*\{[\s\S]*?content:/);
+    expect(css).toMatch(/\.name a\s*\{[^}]*padding-block:/);
+  });
 });
