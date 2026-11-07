@@ -550,6 +550,7 @@ def test_post_sends_a_descriptive_user_agent(monkeypatch: pytest.MonkeyPatch) ->
 
     class _Response:
         status = 204
+        url = "https://e/api"
 
         def __enter__(self):
             return self
@@ -566,6 +567,134 @@ def test_post_sends_a_descriptive_user_agent(monkeypatch: pytest.MonkeyPatch) ->
     agent = seen.get("User-agent", "")
     assert agent.startswith("wipboard/")
     assert "Python-urllib" not in agent
+
+
+class _FakeResponse:
+    """A urlopen result. `url` is the URL after redirects, as urllib sets it."""
+
+    def __init__(self, url: str, status: int = 204) -> None:
+        self.url = url
+        self.status = status
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def test_post_sends_the_access_service_token_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Catches the service token being dropped on the way to the edge.
+
+    Cloudflare Access reads exactly these two header names. A typo in either is
+    indistinguishable from sending nothing, and the symptom is a redirect to the
+    login page rather than an error that names the header.
+    """
+    seen: dict[str, str] = {}
+
+    def fake_urlopen(request, timeout=None):
+        seen.update(request.headers)
+        return _FakeResponse("https://e/api")
+
+    monkeypatch.setattr(wipboard.urllib.request, "urlopen", fake_urlopen)
+    assert wipboard._post("https://e/api", "t", b"{}", ("id", "secret")) == 204
+    # urllib title-cases header names as it stores them.
+    assert seen.get("Cf-access-client-id") == "id"
+    assert seen.get("Cf-access-client-secret") == "secret"
+    # The bearer is not replaced by the service token. Access answers whether
+    # this client may knock; the bearer answers whether the body may be written.
+    assert seen.get("Authorization") == "Bearer t"
+
+
+def test_post_without_a_service_token_sends_no_access_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An endpoint behind no Access policy must not receive empty credentials."""
+    seen: dict[str, str] = {}
+
+    def fake_urlopen(request, timeout=None):
+        seen.update(request.headers)
+        return _FakeResponse("https://e/api")
+
+    monkeypatch.setattr(wipboard.urllib.request, "urlopen", fake_urlopen)
+    wipboard._post("https://e/api", "t", b"{}")
+    assert not [key for key in seen if key.lower().startswith("cf-access")]
+
+
+def test_a_redirected_push_fails_instead_of_reporting_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The whole reason this change is not just two extra headers.
+
+    urllib installs HTTPRedirectHandler by default and it rewrites a redirected
+    POST into a GET. An Access rejection is a 302 to the login page, so without
+    this guard the push follows it, fetches HTML, sees 200, and prints "Pushed
+    19 project(s)" with the board never delivered. Unattended every 15 minutes,
+    that is a dashboard going stale while every signal says it is fine.
+    """
+
+    landed = "https://login.cloudflareaccess.com/cdn-cgi/access/login?meta=eyJhbGciOi.tokenpayload"
+
+    def fake_urlopen(request, timeout=None):
+        return _FakeResponse(landed, status=200)
+
+    monkeypatch.setattr(wipboard.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(wipboard.ConfigError, match="redirected") as caught:
+        wipboard._post("https://e/api/board", "t", b"{}")
+    # The origin is the diagnosis; the query string is a per-request JWT that
+    # would land in the scheduled task's log file every 15 minutes.
+    message = str(caught.value)
+    assert "https://login.cloudflareaccess.com" in message
+    assert "tokenpayload" not in message
+    assert "meta=" not in message
+
+
+def test_push_exits_two_when_the_endpoint_redirects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The guard has to reach the exit code, not just raise inside _post."""
+    store_file = tmp_path / "projects.json"
+    store_file.write_text('{"roots": [], "projects": {"X": {"stage": "idea"}}}')
+    monkeypatch.setattr(wipboard, "store_path", lambda: store_file)
+    monkeypatch.setenv("WIPBOARD_ENDPOINT", "https://e.example/api/board")
+    monkeypatch.setenv("WIPBOARD_TOKEN", "t")
+    monkeypatch.delenv("WIPBOARD_ACCESS_CLIENT_ID", raising=False)
+    monkeypatch.delenv("WIPBOARD_ACCESS_CLIENT_SECRET", raising=False)
+
+    def fake_urlopen(request, timeout=None):
+        return _FakeResponse("https://login.cloudflareaccess.com/x", status=200)
+
+    monkeypatch.setattr(wipboard.urllib.request, "urlopen", fake_urlopen)
+    assert wipboard.main(["push"]) == 2
+
+
+def test_half_a_service_token_is_an_error_naming_the_missing_half(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Half a service token authenticates nothing and fails as a login redirect.
+
+    Refusing it here names the missing half; letting it through makes the user
+    debug an Access redirect instead.
+    """
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
+    monkeypatch.setenv("WIPBOARD_ACCESS_CLIENT_ID", "id")
+    monkeypatch.delenv("WIPBOARD_ACCESS_CLIENT_SECRET", raising=False)
+    with pytest.raises(wipboard.ConfigError, match="access_client_secret"):
+        wipboard.access_config()
+
+
+def test_no_service_token_configured_is_not_an_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Access is optional: the endpoint may be behind Bypass, or behind nothing."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
+    monkeypatch.delenv("WIPBOARD_ACCESS_CLIENT_ID", raising=False)
+    monkeypatch.delenv("WIPBOARD_ACCESS_CLIENT_SECRET", raising=False)
+    assert wipboard.access_config() is None
 
 
 def test_documented_test_counts_match_reality() -> None:

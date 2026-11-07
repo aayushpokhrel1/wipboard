@@ -11,7 +11,7 @@ wipboard                      # then this works anywhere
 ## Verify
 
 ```bash
-python -m pytest              # 43 tests, the whole suite
+python -m pytest              # 49 tests, the whole suite
 ```
 
 **pytest is required.** `python test_wipboard.py` runs nothing and exits 0, because the tests
@@ -180,7 +180,41 @@ the Bypass policy on `api/board` that keeps it working.
 
 Verified on 2026-10-26: `GET /` returns 302, `POST /api/board` without a token returns 401
 from the Worker rather than a login redirect, and `wipboard.aayus-pok.workers.dev` returns
-404, so `workers_dev: false` is holding.
+404, so `workers_dev: false` is holding. Re-verified on 2026-11-07 after deploying
+`3753ab2e`.
+
+#### Tightening `api/board` from Bypass to Service Auth
+
+**Bypass means Everyone.** Access waves every request on that path straight through to the
+Worker, so the bearer token is the only thing standing in front of the ingest route. That is
+a real gate, not a hole, but it is one gate where the rest of the hostname has two. A service
+token closes the difference: Access checks a credential at the edge before the Worker is ever
+reached, and the bearer still decides whether the body may be written.
+
+**Do it in this order, and the push never breaks.** A service token sent to a Bypass policy
+is ignored, so the CLI can be carrying one long before the policy changes.
+
+1. **Zero Trust, Access, Service Auth, Create Service Token.** Name it `wipboard-push`. The
+   Client Secret is shown once.
+2. Give the token to the CLI, either in `~/.config/wipboard/config.json` as
+   `access_client_id` and `access_client_secret`, or as `WIPBOARD_ACCESS_CLIENT_ID` and
+   `WIPBOARD_ACCESS_CLIENT_SECRET`. The scheduled task uses the environment, so put them in
+   `wipboard-push.cmd` beside the command.
+3. Run `wipboard push` and confirm it still succeeds. It is still going through Bypass here;
+   this step only proves the headers do no harm.
+4. **Only now** edit the `api/board` application: replace the Bypass policy with one whose
+   Action is **Service Auth** and whose Include is **Service Token**, `wipboard-push`.
+5. Run `wipboard push` again. A success means the token is being read.
+
+Both halves or neither: the CLI refuses a half-configured token by name rather than letting
+Access reject it as a login redirect.
+
+**Check the failure, not just the success.** Unset one of the two variables and push. It must
+exit 2 saying the push was redirected. If it instead prints `Pushed N project(s)`, the
+redirect guard in `_post` is gone and the next silent breakage will not be noticed: urllib
+follows a redirected POST as a GET, so an Access rejection fetches the login page and returns
+200. On a 15-minute unattended schedule that reads as success forever while the board goes
+stale. A test covers this, and the comment at `_post` in `wipboard.py` says why.
 
 ### Point the CLI at it
 
@@ -189,12 +223,16 @@ from the Worker rather than a login redirect, and `wipboard.aayus-pok.workers.de
 ```json
 {
   "endpoint": "https://wipboard.enamelvault.com/api/board",
-  "token": "the same value you gave wrangler secret put"
+  "token": "the same value you gave wrangler secret put",
+  "access_client_id": "optional, only with an Access Service Auth policy",
+  "access_client_secret": "optional, the other half of the same token"
 }
 ```
 
 `WIPBOARD_ENDPOINT` and `WIPBOARD_TOKEN` override the file, which is how a scheduled task
-passes them without one. Then:
+passes them without one, and so do `WIPBOARD_ACCESS_CLIENT_ID` and
+`WIPBOARD_ACCESS_CLIENT_SECRET`. The two Access values are optional and must be set together;
+see the Service Auth section above. Then:
 
 ```bash
 wipboard push

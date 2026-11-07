@@ -14,6 +14,7 @@ import socket
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -879,24 +880,89 @@ def push_config() -> tuple[str, str]:
     return values["endpoint"], values["token"]
 
 
-def _post(url: str, token: str, body: bytes) -> int:
+def access_config() -> tuple[str, str] | None:
+    """The Cloudflare Access service token, or None when there is not one.
+
+    Optional on purpose: the endpoint may sit behind an Access Bypass policy,
+    behind Service Auth, or behind nothing at all, and the CLI cannot tell which
+    from here. Sending the headers when Access does not ask for them is
+    harmless, which is what makes the policy swap safe to do in either order.
+
+    Both or neither. One half of a service token is not a weaker credential, it
+    is a broken one: Access treats it as unauthenticated and answers with a
+    redirect to the login page, which is the failure _post exists to refuse.
+    Better to name the missing half here than to debug it at the far end.
+    """
+    file_config = _config_file()
+    values: dict[str, str] = {}
+    for key, env in (
+        ("access_client_id", "WIPBOARD_ACCESS_CLIENT_ID"),
+        ("access_client_secret", "WIPBOARD_ACCESS_CLIENT_SECRET"),
+    ):
+        raw = os.environ.get(env) or file_config.get(key)
+        values[key] = raw.strip() if isinstance(raw, str) else ""
+
+    present = [key for key in values if values[key]]
+    if not present:
+        return None
+    missing = [key for key in values if not values[key]]
+    if missing:
+        name = missing[0]
+        raise ConfigError(
+            f"Found {present[0]} but not {name}. A Cloudflare Access service "
+            f"token is both halves or neither. Set WIPBOARD_{name.upper()}, "
+            f"add {name} to {config_path()}, or remove {present[0]}."
+        )
+    return values["access_client_id"], values["access_client_secret"]
+
+
+def _post(
+    url: str, token: str, body: bytes, access: tuple[str, str] | None = None
+) -> int:
     """POST body to url with a bearer token. Return the status code.
 
     Module level and taking everything it needs as arguments so a test can
     replace it and no test ever reaches the network. Raises urllib.error.URLError
     and TimeoutError, which cmd_push turns into an ordinary failure.
     """
-    request = urllib.request.Request(
-        url,
-        data=body,
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "User-Agent": USER_AGENT,
-        },
-    )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+    }
+    if access is not None:
+        # Cloudflare Access reads a service token from exactly these two header
+        # names. They are consumed at the edge and never reach the Worker, so
+        # they do not replace the bearer token above: Access answers "is this
+        # client allowed to knock", the bearer answers "may this body be
+        # written". Two gates, and the Worker still enforces its own.
+        headers["CF-Access-Client-Id"], headers["CF-Access-Client-Secret"] = access
+    request = urllib.request.Request(url, data=body, method="POST", headers=headers)
     with urllib.request.urlopen(request, timeout=PUSH_TIMEOUT) as response:
+        # A redirect here is a failed push wearing a 200. urllib installs
+        # HTTPRedirectHandler by default and it rewrites a redirected POST into
+        # a GET, so an Access rejection (302 to the login page) is followed,
+        # fetches HTML, and returns 200 with the board never delivered. On a
+        # 15-minute unattended schedule that reads as "Pushed 19 project(s)"
+        # forever while the dashboard quietly goes stale, which is the one
+        # failure this whole tool exists to make impossible.
+        #
+        # Comparing the final URL catches every shape of it without disabling
+        # redirects, and no correct response to this POST is ever a redirect.
+        if response.url != url:
+            # The origin only. An Access login URL carries a per-request JWT
+            # hundreds of characters long, and this message goes to a log the
+            # scheduled task appends to every 15 minutes. Where it landed is
+            # the whole diagnosis; the query string is noise.
+            landed = urllib.parse.urlsplit(response.url)
+            raise ConfigError(
+                f"Push was redirected to {landed.scheme}://{landed.netloc}, so "
+                "the board was not "
+                "delivered. The endpoint is behind Cloudflare Access and this "
+                "request was not authenticated: set a service token "
+                "(WIPBOARD_ACCESS_CLIENT_ID and WIPBOARD_ACCESS_CLIENT_SECRET), "
+                "or check the Access policy on the endpoint."
+            )
         return response.status
 
 
@@ -904,6 +970,7 @@ def cmd_push(store: dict) -> int:
     """Post the board to the Worker. Strictly read-only with respect to the store."""
     try:
         endpoint, token = push_config()
+        access = access_config()
     except ConfigError as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -918,7 +985,12 @@ def cmd_push(store: dict) -> int:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
 
     try:
-        status = _post(endpoint, token, body)
+        status = _post(endpoint, token, body, access)
+    except ConfigError as exc:
+        # _post raises this for a redirect, which is an auth problem stated in
+        # full rather than a status code to look up.
+        print(str(exc), file=sys.stderr)
+        return 2
     except urllib.error.HTTPError as exc:
         # HTTPError is a URLError subclass, so it must be caught first.
         print(f"Push to {endpoint} failed: HTTP {exc.code}", file=sys.stderr)
