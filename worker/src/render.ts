@@ -632,7 +632,12 @@ body {
 .log .when { flex: 0 0 2.6rem; text-align: right; color: var(--accent); }
 .log .what { overflow-wrap: anywhere; }
 
-.caption { margin-top: auto; padding: 0 .75rem .6rem; }
+/* Content flows from the top of the card, not the bottom. A grid row
+   stretches every card to the tallest in it, and pushing the caption down with
+   margin-top:auto then opened a void above a short card the moment a
+   neighbour's drawer was opened. Empty space belongs under the last line, not
+   over the first. */
+.caption { padding: 0 .75rem .6rem; }
 .note { margin: .45rem 0 0; font-size: .78rem; line-height: 1.35; color: var(--text); overflow-wrap: anywhere; }
 /* The one line every card states without being opened: what git says is
    happening right now. */
@@ -858,6 +863,7 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
   const body = `${sheetHead(age, payload.host, "")}
 <p class="back"><a href="/">back to the sheet</a></p>
 <article class="single">
+  <div class="cell">
   <div class="frame d${step === -1 ? "x" : step}${suspect ? " suspect" : ""}">
     <div class="head">
       <span class="num">${escapeHtml(project.has_git ? project.branch || "?" : "no git")}</span>
@@ -869,6 +875,7 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
       <span class="in-stage">${escapeHtml(humanAge(parseStamp(project.stage_set_at), nowMs))} in stage</span>
       ${flags}
     </p>
+  </div>
   </div>
   ${project.note ? `<p class="note">${escapeHtml(project.note)}</p>` : ""}
   ${next}
