@@ -222,8 +222,50 @@ network.
 $action = New-ScheduledTaskAction -Execute 'wipboard' -Argument 'push'
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) `
   -RepetitionInterval (New-TimeSpan -Minutes 15)
-Register-ScheduledTask -TaskName 'wipboard push' -Action $action -Trigger $trigger
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+  -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -TaskName 'wipboard push' -Action $action -Trigger $trigger `
+  -Settings $settings
 ```
+
+The settings are not optional on a laptop: without them the task is suspended on battery,
+which is exactly when the machine is away from the desk and the board is being read on a
+phone.
+
+Check it with `(Get-ScheduledTaskInfo -TaskName 'wipboard push').LastTaskResult`. **0 is
+success**; anything else means the board is quietly freezing while the task reports itself
+as scheduled, so this is worth looking at once rather than trusting.
+
+#### If `-Execute 'wipboard'` fails under the task but works in your shell
+
+Symptom: `LastTaskResult` is 1 and the task writes
+`uv trampoline failed to canonicalize script path`, while the identical command run by hand
+from any directory succeeds.
+
+Cause: `wipboard.exe` in `~/.local/bin` is a uv trampoline that points at its tool venv, and
+if `uv tool install` was run **from inside a containerised app** (the Claude desktop app, a
+Store-packaged terminal) then that venv does not live where it appears to. It is redirected
+into the app's MSIX container, at
+`%LOCALAPPDATA%\Packages\<AppId>\LocalCache\Roaming\uv\tools\wipboard`, and Task Scheduler
+runs outside the container and cannot see it. `Get-Item <path> | Select Target` reveals the
+redirection; the path looks perfectly normal otherwise, which is what makes this expensive.
+
+Two fixes, both verified on 2026-11-07:
+
+1. Re-run `uv tool install <repo>` from an ordinary terminal, so the venv lands in the real
+   `AppData`, and keep the simple action above.
+2. Skip the trampoline. wipboard is standard library only, so the system interpreter can run
+   the script with no venv at all:
+
+```bat
+"C:\Python314\python.exe" "C:\path\to\whereami\wipboard.py" push >> "%LOCALAPPDATA%\Temp\wipboard-push.log" 2>&1
+```
+
+   Put that in a `.cmd` and point the task at the file. This ties the scheduled push to the
+   checkout, which is the trade. Put the command in a file rather than in the task's argument
+   string either way: nested quotes in a Task Scheduler `cmd.exe /c` argument fail as
+   **"The system cannot find the path specified"**, which names neither the path nor the
+   quoting and sends you hunting for a missing file that is not missing.
 
 None of this is installed for you. A tool that edits a stranger's git hooks or schedules tasks
 on install would be a bad citizen, which is the same reason the `SessionStart` hook lives in
