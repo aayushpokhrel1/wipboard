@@ -112,11 +112,24 @@ npx wrangler secret bulk $tmp
 Remove-Item $tmp -Force
 ```
 
-Then deploy:
+Then deploy, **from inside `worker/`**:
 
 ```bash
 npx wrangler deploy
 ```
+
+From the repo root, use the script rather than reaching for `npm --prefix worker exec`:
+
+```bash
+npm --prefix worker run deploy
+```
+
+`--prefix` tells npm where to resolve the package, not where to run it, so `exec` leaves
+wrangler in the repo root with no `wrangler.jsonc` beside it. It does not say the config is
+missing. It guesses you meant a static site and fails with **"Could not detect a directory
+containing static files (e.g. html, css and js) for the project"**, which sends you looking at
+the Worker instead of at your working directory. `npm run` executes in the package directory,
+so the script form is correct from anywhere. Hit on 2026-11-07.
 
 No `--var` flag: this deployment runs in **token mode** with Access in front, which is the
 tracked default, so there is nothing to override and nothing to forget on a later deploy. Set
