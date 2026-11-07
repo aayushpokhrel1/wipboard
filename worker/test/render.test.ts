@@ -134,7 +134,12 @@ describe("renderBoard", () => {
     // Three channels, only one of which is colour: the struck stage, the
     // struck frame number, and the literal flag.
     expect(html).toContain("suspect");
-    expect(html).toContain('class="flag">!<');
+    // The alarm is rationed to the "!" itself. "dirty" sits on the same card
+    // and is an ordinary state, so painting it in the alarm too would both
+    // unration the ink and bury the one channel that carries this without
+    // colour among identical red chips.
+    expect(html).toContain('class="flag bang">!<');
+    expect(html).toContain('class="flag">dirty<');
     // And the count at the top. The failure the author named for this page is
     // one that looks calm when a third of the board is suspect, so the sheet
     // says how many are before a single frame is read. Counted from the "!"

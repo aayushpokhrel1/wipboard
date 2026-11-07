@@ -177,7 +177,7 @@ components:
     typography: "{typography.meta}"
     rounded: "{rounded.none}"
     padding: "0.06rem 0.28rem"
-  chip-flag-suspect:
+  chip-flag-bang:
     backgroundColor: "{colors.hot}"
     textColor: "{colors.on-hot}"
     typography: "{typography.meta}"
@@ -261,7 +261,7 @@ that runs from the instrument colour down to nearly the card's own border.
 ### Secondary
 
 - **Alarm** (`#ff5a42`): the condition colour. It is a stale snapshot's age and note, the suspect
-  tag's fill, the inverted stage chip and flags on a suspect card, and that card's rail. Measured
+  tag's fill, the inverted stage chip, the `!` flag and that card's rail. Measured
   at **5.7:1 on a card** as a mark and **6.0:1 as text on the bar**. Nothing that is not a
   condition the data holds is ever drawn in it.
 - **Alarm Ink** (`#120503`): the only text colour that ever sits on an alarm fill.
@@ -371,12 +371,14 @@ pushed right by `margin-left: auto`) on `bar` over a `line` hairline. Then the r
 on `bar`: the age and its note and the suspect tag on the left, the stage tally on the right. That
 strip is stacked on a phone (`minmax(0, 1fr)`, `.9rem` gap, with the age block divided by a bottom
 hairline) and goes side by side from **34rem** (`auto minmax(0, 1fr)`, `1.4rem` gap, the divider
-rotating to a right border). Above **70rem** the tally column is capped at `46rem`. Four tally
-tiles plus the age do not fit across 375px, and shipping them side by side at every width ran them
-off the right edge of the device this page is most often read on.
+rotating to a right border). Above **70rem** the tally column is capped at `46rem`. The tally
+and the age do not fit across 375px, and shipping them side by side at every width ran them off
+the right edge of the device this page is most often read on.
 
-The tally is a one-row grid (`grid-auto-flow: column`, `grid-auto-columns: 1fr`) whose 1px gaps
-show `line` through from the list background, so the tile dividers are gaps rather than borders.
+The tally is a grid of three columns on a phone and six from **34rem**, whose 1px gaps show
+`line` through from the list background, so the tile dividers are gaps rather than borders. Six
+tiles across 375px overflow the viewport, so on a phone they wrap to two rows of three rather
+than scrolling: a scroller would hide the zeroed stages again, and printing those is the point.
 
 The board is then cut in two: **working on** leads, **the rest** follows, each introduced by a
 section rule carrying its label and count. Each section is a CSS grid,
@@ -488,10 +490,13 @@ number and the word carry it; the fill only agrees. Rendered only when the count
 The chrome strip is the instrument's housing: wordmark, subtitle, and the host pushed to the right
 edge, all `dim` mono at .66rem with .22em tracking, uppercase, on `bar` over a `line` hairline.
 
-The tally is a single row of tiles on `bar`, split by 1px `line` gaps, each tile count above label
-(`column-reverse`), counts in `text` and bold at tile-count size, labels in `dim` micro. Printed
-in the CLI's fixed stage cycle order rather than payload order, so the rows never move and a row
-of counts stays comparable. Counts only: the page is read-only and nothing filters.
+Tiles on `bar`, split by 1px `line` gaps, each tile count above label (`column-reverse`), counts
+in `text` and bold at tile-count size, labels in `dim` micro. Printed in the CLI's fixed stage
+cycle order rather than payload order, so the rows never move and a row of counts stays
+comparable. Every stage in the vocabulary prints, including the ones at zero: an instrument shows
+a zeroed channel at zero, and dropping it made "no projects in testing" read as "testing is not a
+stage here" while changing the tile count and width between loads. Counts only: the page is
+read-only and nothing filters.
 
 ### Cards
 
@@ -511,9 +516,13 @@ The board's unit and the whole system in miniature.
   views never need translating.
 - **The git line** is the one line every card states without being opened: branch in accent and
   bold, commit subject and changed count in `dim`, or the words "no git".
-- **Suspect** keeps three channels and only one is colour: the stage chip and the flags invert to
-  a filled alarm tag, the rail goes to alarm regardless of age, and `!` prints among the flags as
-  a word. The suspect rail rule is declared after the recency rules deliberately, so alarm wins.
+- **Suspect** keeps three channels and only one is colour: the stage chip inverts to a filled
+  alarm tag, the rail goes to alarm regardless of age, and `!` prints among the flags as a word.
+  The suspect rail rule is declared after the recency rules deliberately, so alarm wins.
+  The alarm is rationed to the `!` itself: `dirty` and `^N` are ordinary states that happen to sit
+  on a suspect card and stay in `chip`. Painting them too put about twenty-five hot chips on a
+  7-of-19 board and buried the `!` among identical red chips, which is the channel that carries
+  this without colour.
 - **Motion:** one animation exists in the system. `develop`, `520ms` on
   `cubic-bezier(.16, 1, .3, 1)`, staggered `22ms` per card index via an inline `--i`, fading the
   card up from `opacity: .4` with the rail starting at `line`. Only the rail moves in colour, so

@@ -5,10 +5,12 @@
 // The Worker holds no git knowledge. It renders whatever payload it is given,
 // and the payload shape is owned by board_payload in wipboard.py.
 //
-// The page is a darkroom contact sheet: the whole roll printed on one sheet,
-// the frames that are lying to you crossed out in grease pencil. The design
-// system is documented in DESIGN.md; the rules a reader of this file must not
-// break are comments at the code below.
+// The page is a lit instrument panel: a readout strip that answers how old
+// this is, how much of it is lying and where the mass sits, then a field of
+// cards. It was a darkroom contact sheet until 2026-11-07, printed on paper
+// with the suspect frames struck through in grease pencil; that world is gone
+// and so are its gestures. The design system is documented in DESIGN.md; the
+// rules a reader of this file must not break are comments at the code below.
 
 export const PAYLOAD_VERSION = 2;
 
@@ -89,24 +91,18 @@ function humanAge(then: number | null, now: number): string {
   return `${Math.floor(days / 365)}y`;
 }
 
-// A frame's density. This is the load-bearing visual decision on the page: the
-// ink a frame prints at is how long since its last commit, so the sheet's own
-// tone answers "what have I actually got" before a single name is read.
+// How long since a card's last commit, as one of six steps. The step picks
+// the card's rail colour and nothing else; see --r0 through --r5 for which
+// direction the ramp runs and why.
 //
-// Density means distance from the paper, in both colour schemes. A fresh frame
-// nearly vanishes into the sheet; a stale one is dense and is what you see
-// first. The six steps are a fixed ramp, never a gradient computed from the
-// board, or the same project would print differently on a different day.
+// The six steps are a fixed ramp, never a gradient computed from the board,
+// or the same project would print differently on a different day.
 //
-// Contrast is not on the ramp. There is exactly one text colour inside a
-// frame, full ink, and the six grounds all clear WCAG 2.2 AA against it;
-// hierarchy inside a frame is carried by size, weight and tracking instead.
-// A muted grey tier was tried here on 2026-11-02 and removed the same day: a
-// second text colour has to clear the whole ramp, and a grey that does is no
-// longer muted, so it bought nothing and failed AA at the dense end in both
-// schemes. The silver tier survives only outside the frames, where the ground
-// is always the paper. Do not reintroduce a muted colour inside a frame
-// without re-checking it against d5.
+// This returned a ground tone for the whole frame until 2026-11-07, and the
+// comment here described the opposite rule to the one the code now implements:
+// dense-means-stale, from a world where a frame was ink on paper. The rail
+// replaced it and runs the other way. Two load-bearing comments disagreeing
+// about recency is worse than either rule being wrong, so there is one left.
 function density(lastCommit: number | null, now: number): number {
   if (lastCommit === null) return -1; // never exposed: no git, or no commits
   const days = Math.max(0, now - lastCommit) / DAY_MS;
@@ -145,7 +141,7 @@ function snapshotAge(generatedAt: number | null, now: number): {
     return {
       text,
       tone: "stale",
-      note: "Nothing has been pushed since. Every frame below is at least this old.",
+      note: "Nothing has been pushed since. Every card below is at least this old.",
     };
   }
   if (elapsed > HOUR_MS) {
@@ -161,10 +157,15 @@ function stageCounts(projects: Project[]): Array<[string, number]> {
   }
   // Cycle order first, then anything the CLI's vocabulary has grown since this
   // Worker was deployed, so a new stage appears rather than disappearing.
+  //
+  // Every stage in the vocabulary prints, including the ones at zero. An
+  // instrument shows a zeroed channel at zero; dropping it makes "no projects
+  // in testing" look like "testing is not a stage here", and it changes the
+  // number of tiles and their width between loads, which is exactly what the
+  // fixed cycle order above exists to prevent.
   const ordered: Array<[string, number]> = [];
   for (const stage of STAGE_CYCLE) {
-    const count = counts.get(stage);
-    if (count !== undefined) ordered.push([stage, count]);
+    ordered.push([stage, counts.get(stage) ?? 0]);
   }
   for (const [stage, count] of counts) {
     if (!STAGE_CYCLE.includes(stage)) ordered.push([stage, count]);
@@ -195,16 +196,16 @@ function inFlight(project: Project, now: number): boolean {
   return last !== null && now - last < 3 * DAY_MS;
 }
 
-// One frame of the sheet. The furniture is identical in every frame and in the
-// same positions, which is what makes these read across as one object instead
-// of down as a list: number and stage in the frame's head, name, then the age
-// line. The note and the git line print in the rebate below the frame, the way
-// a caption is written in a proof sheet's margin, so an absent note never
-// changes the frame's own shape.
+// One card of the board. The furniture is identical in every card and in the
+// same positions, which is what makes these read across as one instrument
+// instead of down as a list: number and stage chip in the head, name, then the
+// age line, then what git says is happening in one line. An absent note never
+// changes the card's own shape.
 //
-// `lead` is the in-flight section, where the frame also carries what the next
-// work is and the recent commit sequence. The compact frame is the same frame
-// with those two blocks absent, so both sections read as one sheet.
+// `lead` is the in-flight section, where the card also carries what the next
+// work is and the recent commit sequence, behind the drawer. The compact card
+// is the same card with those two blocks absent, so both sections read as one
+// board.
 function renderFrame(project: Project, index: number, now: number, lead = false): string {
   const suspect = project.flags.includes("!");
   const lastCommit = parseStamp(project.last_commit);
@@ -213,7 +214,16 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
   const inStage = humanAge(parseStamp(project.stage_set_at), now);
   const number = String(index + 1).padStart(2, "0");
   const flags = project.flags
-    .map((flag) => `<span class="flag">${escapeHtml(flag)}</span>`)
+    // Only "!" is the suspect flag. "dirty" and "^N" are ordinary states that
+    // happen to sit on a suspect card, and painting them in the alarm too put
+    // about twenty-five hot chips on a 7-of-19 board: the ink stopped being
+    // rationed, and the "!" stopped being findable among four identical red
+    // chips, which is the channel that is supposed to carry this without
+    // colour.
+    .map(
+      (flag) =>
+        `<span class="flag${flag === "!" ? " bang" : ""}">${escapeHtml(flag)}</span>`,
+    )
     .join(" ");
   const caption = project.note
     ? `<p class="note">${escapeHtml(project.note)}</p>`
@@ -274,7 +284,7 @@ function renderFrame(project: Project, index: number, now: number, lead = false)
         </div>
         <p class="name"><a href="${projectHref(project.name)}">${escapeHtml(project.name)}</a></p>
         <p class="meta">
-          <span class="touched">${escapeHtml(touched)}</span>
+          <span class="touched">commit ${escapeHtml(touched)}</span>
           <span class="in-stage">${escapeHtml(inStage)} in stage</span>
           ${flags}
         </p>
@@ -313,11 +323,23 @@ const STYLE = `
   --chip: #1b2a38;
   --chip-ink: #a9bccb;
   /* Recency, as the rail down the left edge of every card: lit when the work
-     is warm, almost out when it is cold. The dim end is deliberately close to
-     the card and does not meet 3:1 against it, which is allowed because the
-     rail is never the only carrier: the same fact is printed as text ("23d")
-     in the card's own meta line. If the rail ever becomes the sole channel for
-     something, it has to be re-measured. */
+     is warm, almost out when it is cold.
+
+     That direction is a decision, not an accident, and it was challenged on
+     2026-11-07 on good grounds: this tool exists to catch the project you
+     abandoned, so lighting the healthy and dimming the neglected can be read
+     as inverting its purpose. The author kept it this way deliberately. The
+     reason it holds: --hot already owns "look at this", and a bright rail on
+     every cold card would put a second competing claim on the same glance,
+     against an alarm that is rationed to seven cards out of nineteen. Cold
+     work is found by the cut (it is everything under THE REST) and by its own
+     printed age, not by being the loudest thing on the page. If --hot ever
+     stops being rationed, re-open this.
+
+     The dim end does not meet 3:1 against the card, which is allowed because
+     the rail is never the only carrier: the same fact is printed as text
+     ("26d since commit") in the card's own meta line. If the rail ever becomes
+     the sole channel for something, it has to be re-measured. */
   --r0: #3ad6c4;
   --r1: #2faea0;
   --r2: #2b8b84;
@@ -386,7 +408,14 @@ body {
 @media (min-width: 34rem) {
   .stamp { grid-template-columns: auto minmax(0, 1fr); gap: 1.4rem; }
   .aged { padding: 0 1.4rem 0 0; border-bottom: 0; border-right: 1px solid var(--line); }
+  .tally { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
+/* The project page, the empty state and both error panels call sheetHead with
+   no tally. Without this they drew the divider rule into half a strip of
+   nothing, which reads as a panel that failed to load rather than one with
+   nothing to show. */
+.stamp.lone { grid-template-columns: minmax(0, 1fr); }
+.stamp.lone .aged { padding: 0; border: 0; }
 /* The exposure stamp, still the largest thing on the page by a wide margin and
    it must stay that way: a reader who takes one fact away takes this one. */
 .age {
@@ -429,10 +458,14 @@ body {
 
 /* The tally as instrument tiles: count above, stage under it, so the counts
    align into one row of numbers that can be read without reading the labels. */
+/* Two rows of three on a phone, one row of six from 34rem. Six tiles across
+   375px overflowed the viewport by 20px the moment the zeroed stages started
+   printing, which is the same width failure the stat bar already had once.
+   Wrapping keeps every channel visible; a scroller would hide the zeroes
+   again, which is the thing printing them was for. */
 .tally {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   margin: 0;
   padding: 0;
@@ -570,7 +603,7 @@ body {
    stroke through the stage here; a stroke is a paper gesture and does not
    belong on a lit instrument, but do not drop a channel when replacing it. */
 .cell:has(.suspect) { --rail: var(--hot); }
-.suspect .stage, .suspect .flag { background: var(--hot); color: var(--on-hot); }
+.suspect .stage, .flag.bang { background: var(--hot); color: var(--on-hot); }
 
 /* The drawer. Every card states what is happening in one line; the depth
    behind it opens on press. Nineteen cards with four next items and four
@@ -656,8 +689,13 @@ body {
 a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: 1px; }
 a:hover { text-decoration-thickness: 2px; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.name a { color: var(--text); text-decoration-color: var(--line); }
-.name a:hover { color: var(--accent); }
+/* The card's name is the only route to the project page, and the reader is on
+   a phone, so it has to be legible as a link without hover. It was underlined
+   in var(--line) until 2026-11-07, which is 1.24:1 on a card: invisible, and
+   indistinguishable from antialiasing in a capture. The underline is drawn in
+   the accent and sits below the baseline where it cannot touch the glyphs. */
+.name a { color: var(--text); text-decoration-color: var(--accent); text-underline-offset: .22em; }
+.name a:hover, .name a:focus-visible { color: var(--accent); }
 
 /* A project's own page: one card at full width, then the blocks the board has
    no room for, open rather than behind a drawer, because that is why a reader
@@ -743,10 +781,10 @@ function sheetHead(
   return `<header>
   <div class="edge">
     <h1>wipboard</h1>
-    <span>contact sheet</span>
+    <span>status board</span>
     ${host ? `<span class="host">${escapeHtml(host)}</span>` : ""}
   </div>
-  <div class="stamp">
+  <div class="stamp${tally ? "" : " lone"}">
     <div class="aged">
       <p class="age ${age.tone}">${escapeHtml(age.text)}</p>
       ${age.note ? `<p class="age-note ${age.tone}">${escapeHtml(age.note)}</p>` : ""}
@@ -768,7 +806,7 @@ export function renderBoard(payload: Board, now: Date): string {
   // How many frames are lying to you, counted once at the top. The failure the
   // author named for this page is one that looks calm when a third of the board
   // is suspect, and after the wax ring was dropped that fact was carried only
-  // by small strikes scattered down the sheet. The number is not a second
+  // by small strikes scattered down the board. The number is not a second
   // channel for the flag: it is the one place the sheet's own shape is stated
   // rather than seen. It is not WORKING ON, which counts something else.
   const suspects = payload.projects.filter((project) => project.flags.includes("!")).length;
@@ -817,7 +855,16 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
   const suspect = project.flags.includes("!");
   const step = density(parseStamp(project.last_commit), nowMs);
   const flags = project.flags
-    .map((flag) => `<span class="flag">${escapeHtml(flag)}</span>`)
+    // Only "!" is the suspect flag. "dirty" and "^N" are ordinary states that
+    // happen to sit on a suspect card, and painting them in the alarm too put
+    // about twenty-five hot chips on a 7-of-19 board: the ink stopped being
+    // rationed, and the "!" stopped being findable among four identical red
+    // chips, which is the channel that is supposed to carry this without
+    // colour.
+    .map(
+      (flag) =>
+        `<span class="flag${flag === "!" ? " bang" : ""}">${escapeHtml(flag)}</span>`,
+    )
     .join(" ");
   const nextItems = project.next?.items ?? [];
   const sourceLabel: Record<string, string> = {
@@ -861,7 +908,7 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
   </section>`
     : "";
   const body = `${sheetHead(age, payload.host, "")}
-<p class="back"><a href="/">back to the sheet</a></p>
+<p class="back"><a href="/">back to the board</a></p>
 <article class="single">
   <div class="cell">
   <div class="frame d${step === -1 ? "x" : step}${suspect ? " suspect" : ""}">
@@ -869,9 +916,9 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
       <span class="num">${escapeHtml(project.has_git ? project.branch || "?" : "no git")}</span>
       <span class="stage">${escapeHtml(project.stage)}</span>
     </div>
-    <p class="name">${escapeHtml(project.name)}</p>
+    <h1 class="name">${escapeHtml(project.name)}</h1>
     <p class="meta">
-      <span class="touched">${escapeHtml(humanAge(parseStamp(project.last_commit), nowMs))}</span>
+      <span class="touched">commit ${escapeHtml(humanAge(parseStamp(project.last_commit), nowMs))}</span>
       <span class="in-stage">${escapeHtml(humanAge(parseStamp(project.stage_set_at), nowMs))} in stage</span>
       ${flags}
     </p>
@@ -889,13 +936,13 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
 // name it looked for, because the usual cause is a project renamed in the CLI
 // since the link was opened.
 export function renderProjectMissing(name: string): string {
-  const body = `${sheetHead({ text: "No such frame", tone: "stale", note: "" }, "", "")}
+  const body = `${sheetHead({ text: "No such project", tone: "stale", note: "" }, "", "")}
 <div class="empty">
   <p>Nothing on this board is called ${escapeHtml(name)}.</p>
   <p>It may have been renamed or dropped since this page was last pushed.</p>
-  <p><a href="/">Back to the sheet</a></p>
+  <p><a href="/">Back to the board</a></p>
 </div>`;
-  return page("wipboard: no such frame", body);
+  return page("wipboard: no such project", body);
 }
 
 // An unknown version means the CLI was upgraded and the Worker was not. Say so
