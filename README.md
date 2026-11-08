@@ -39,6 +39,7 @@ Python 3.11+. The CLI has no dependencies, standard library only. (The optional 
 
 ```bash
 wipboard init ~/code            # register a folder of repos, discover them one level deep
+                                # a project that is itself a folder of repos counts as one
 wipboard                        # the board, stalest first
 wipboard set Budgerr spec --note "waiting on an API key"
 wipboard md PROJECTS.md         # write a markdown board for GitHub or your phone

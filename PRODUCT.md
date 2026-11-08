@@ -64,6 +64,13 @@ contradiction between them is the product.
   (`/wipboard`), not a command remembered.
 - **A folder of repos.** `wipboard init <root>` discovers repos one level deep under each
   registered root. Several of the folders it was built against have no git at all.
+- **A project may itself be a folder of repos.** If a project folder has no `.git` of its
+  own but its immediate children do, those children are merged and the project stays one
+  row: newest commit wins, dirty if any is dirty, counts sum, and uncommitted paths carry
+  their child's folder name. Added 2026-11-08, because `Budgerr` is three repositories and
+  157 commits and the board was calling it an idea with nothing started. A folder that is
+  itself a repo is never rescanned, so this costs nothing for the projects that already
+  worked. See `docs/superpowers/specs/2026-11-08-multi-repo-projects-design.md`.
 - **A phone away from the machine, and the desktop too.** The Worker page is the same board as
   a web page, pushed by `wipboard push`, ideally from a `post-commit` hook. It is a snapshot
   and can be stale, which is why the page leads with its own age. This said "a phone, away
