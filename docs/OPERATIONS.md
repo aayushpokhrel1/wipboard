@@ -77,7 +77,7 @@ as a web page. The CLI does not need it and sends nothing anywhere until `endpoi
 npm --prefix worker test
 ```
 
-45 tests plus `tsc --noEmit`, run in the real Workers runtime via
+46 tests plus `tsc --noEmit`, run in the real Workers runtime via
 `@cloudflare/vitest-pool-workers`, not a mock.
 
 ### First deploy

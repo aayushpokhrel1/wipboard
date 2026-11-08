@@ -793,15 +793,23 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 /* A zero bucket is a rule, not an absent element. Dropping it would close the
    gap and make a quiet month look like a short project, which is the one
-   misreading this chart exists to prevent. */
+   misreading this chart exists to prevent.
+   .hist-chart's border-bottom draws the axis, so the zero rule does not have
+   to be legible on its own; what has to be legible is the difference between
+   a week with work and a week without.
+   That is what min-height buys. Bars are scaled against the project's own
+   peak, so one commit in a week beside a week of forty is 2% of the height:
+   measured on the live board on 2026-11-08, Chess_Coach had a week clamping
+   to the old 1px, drawing a week that had commits in it exactly as tall as a
+   week that had none. Only the colour separated them, at one pixel. */
 .hist-bar {
   flex: 1 1 0;
   min-width: 0;
   height: var(--h, 0%);
-  min-height: 1px;
+  min-height: 3px;
   background: var(--accent);
 }
-.hist-bar.zero { height: 1px; background: var(--line); }
+.hist-bar.zero { height: 1px; min-height: 0; background: var(--line); }
 /* The band. --chip with a --line border, never --hot: the alarm colour means
    suspect everywhere on this page, and a stage change is not an alarm. It is
    not --accent either, or the band would read as part of the chart above it. */

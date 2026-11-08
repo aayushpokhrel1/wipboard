@@ -428,6 +428,18 @@ describe("the stylesheet", () => {
   // it: "back to the board" was a 13px strip and the drawer's summary 21px,
   // both under WCAG 2.5.8's 24. The back link is the only way off a project
   // page on a phone, which is the device this board exists to be read on.
+  // Measured on the live board on 2026-11-08: Chess_Coach had a week at 2% of
+  // its own peak, which clamped to the old 1px and drew a week with commits in
+  // it exactly as tall as a week with none.
+  it("keeps a week with work taller than a week without", () => {
+    const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
+    const bar = css.slice(css.indexOf(".hist-bar {"));
+    expect(bar).toMatch(/^[^}]*min-height:\s*3px/);
+    // And the zero rule must opt out of that floor, or every empty week grows
+    // into a bar and the chart stops having gaps at all.
+    expect(css).toMatch(/\.hist-bar\.zero\s*\{[^}]*min-height:\s*0/);
+  });
+
   it("gives the back link and the drawer summary a 24px tap target", () => {
     const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
     expect(css).toMatch(/\.back a\s*\{[^}]*min-height:\s*24px/);
