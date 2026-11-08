@@ -4,7 +4,7 @@ import { env, SELF } from "cloudflare:test";
 // authenticate like a browser would. They predate the view auth.
 const VIEW_COOKIE = { Cookie: "wipboard_view=view-token-for-tests" };
 import { describe, expect, it } from "vitest";
-import { renderBoard, renderEmpty, type Board } from "../src/render";
+import { renderBoard, renderEmpty, renderProject, type Board } from "../src/render";
 
 const NOW = new Date("2026-10-20T12:00:00Z");
 
@@ -196,6 +196,110 @@ describe("renderBoard", () => {
   });
 });
 
+// The HISTORY section. Every one of these is a regression that would otherwise
+// be caught only by opening a page: a chart that silently vanished, a guess
+// presented as a record, or a stage name from the payload reaching the browser
+// unescaped.
+describe("renderProject history", () => {
+  const full = () =>
+    project({
+      name: "alpha",
+      weeks: [0, 3, 7, 0, 2, 5, 1, 0, 4, 6],
+      week_start: "2026-08-11T12:00:00",
+      first_commit: "2026-08-11T12:00:00",
+      stage_history: [
+        { stage: "idea", at: "2026-08-11T12:00:00", inferred: true },
+        { stage: "building", at: "2026-09-01T12:00:00" },
+      ],
+      recent: [{ at: "2026-10-20T11:00:00", subject: "Add the thing" }],
+    });
+
+  it("renders a chart, a band and a scale line for a project with all fields", () => {
+    const html = renderProject(board(), full(), NOW);
+    expect(html).toContain("history");
+    expect(html).toContain('class="hist-chart"');
+    // One bar per bucket, and a zero bucket is a rule rather than nothing.
+    expect(html.match(/class="hist-bar/g)?.length).toBe(10);
+    expect(html.match(/class="hist-bar zero"/g)?.length).toBe(3);
+    expect(html).toContain('class="hist-band"');
+    expect(html.match(/class="hist-seg/g)?.length).toBe(2);
+    expect(html).toContain('class="hist-scale"');
+    // The chart is one labelled image, not 26 labelled bars.
+    expect(html).toContain('role="img"');
+    expect(html).toContain("28 commits over 10 weeks");
+  });
+
+  it("renders the stage trail but no chart for a project with no git", () => {
+    // For these projects the hand-set stage is the only history that will ever
+    // exist, so the section must survive without a chart, and the trail prints
+    // as a list because there is no axis for a band to align to.
+    const html = renderProject(
+      board(),
+      project({
+        has_git: false,
+        weeks: [1, 2, 3],
+        first_commit: "2026-08-11T12:00:00",
+        stage_history: [{ stage: "idea", at: "2026-08-11T12:00:00" }],
+      }),
+      NOW,
+    );
+    expect(html).toContain("history");
+    expect(html).not.toContain('class="hist-chart"');
+    expect(html).not.toContain('class="hist-scale"');
+    expect(html).not.toContain('class="hist-band"');
+    expect(html).toContain('class="hist-list alone"');
+    expect(html).toContain("idea");
+  });
+
+  it("renders no section at all when there is neither a first commit nor a stage trail", () => {
+    // An empty box saying nothing is worse than no box.
+    const html = renderProject(board(), project(), NOW);
+    // The heading and the markup, not the word: the stylesheet always carries
+    // .history rules, so a bare search for "history" can never pass.
+    expect(html).not.toContain(">HISTORY<");
+    expect(html).not.toContain('class="hist-');
+  });
+
+  it("marks an inferred entry with an asterisk and a footnote", () => {
+    // Anti-goal one: a date that was invented and not marked. The mark has to
+    // be text, because colour alone is not a channel.
+    const html = renderProject(board(), full(), NOW);
+    expect(html).toContain('class="hist-seg inferred"');
+    expect(html).toContain("idea*");
+    expect(html).toContain("Inferred from the first commit");
+    expect(html).toContain("Not a recorded change");
+  });
+
+  it("escapes a stage name that contains HTML", () => {
+    const html = renderProject(
+      board(),
+      project({
+        first_commit: "2026-08-11T12:00:00",
+        stage_history: [{ stage: "<script>x</script>", at: "2026-08-11T12:00:00" }],
+      }),
+      NOW,
+    );
+    expect(html).not.toContain("<script>x</script>");
+    expect(html).toContain("&lt;script&gt;x&lt;/script&gt;");
+  });
+
+  it("renders a version 2 payload exactly as before, with no history section", () => {
+    // The Worker accepts version 2 while the CLI still sends it, so a payload
+    // with none of the new fields must not grow a section.
+    const html = renderProject(
+      board({ version: 2 }),
+      project({ recent: [{ at: "2026-10-20T11:58:00", subject: "Add the thing" }] }),
+      NOW,
+    );
+    expect(html).toContain("alpha");
+    // The drawer still renders from a version 2 payload's own fields. The
+    // fixture has to carry a commit for that to mean anything; without one this
+    // asserted the absence of a drawer nothing had asked for.
+    expect(html).toContain("Add the thing");
+    expect(html).not.toContain(">HISTORY<");
+  });
+});
+
 describe("GET /", () => {
   it("reports an unknown payload version instead of rendering", async () => {
     // Review Focus 4: the CLI was upgraded and the Worker was not.
@@ -264,5 +368,34 @@ describe("the stylesheet", () => {
     const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
     expect(css).toMatch(/\.in-stage::before\s*\{[\s\S]*?content:/);
     expect(css).toMatch(/\.name a\s*\{[^}]*padding-block:/);
+  });
+
+  // The HISTORY rules are CSS-only facts: no markup assertion can see a bar
+  // that lost its height, a zero bucket that stopped being a rule, or a band
+  // that stopped collapsing on a phone. Each of these is the rule that carries
+  // one of those, so a swallowed declaration fails here rather than on a
+  // screenshot.
+  it("keeps the history chart, band and phone list rules", () => {
+    const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
+    expect(css).toMatch(/\.hist-chart\s*\{[^}]*align-items:\s*flex-end/);
+    expect(css).toMatch(/\.hist-bar\s*\{[^}]*height:\s*var\(--h/);
+    expect(css).toMatch(/\.hist-bar\.zero\s*\{[^}]*height:\s*1px/);
+    expect(css).toMatch(/\.hist-band\s*\{[^}]*position:\s*relative/);
+    expect(css).toMatch(/\.hist-seg\s*\{[^}]*left:\s*var\(--l/);
+    expect(css).toMatch(/\.hist-seg\s*\{[^}]*width:\s*var\(--w/);
+    expect(css).toMatch(/\.hist-list\s*\{[^}]*display:\s*none/);
+    // The band collapses to the list below the breakpoint the tally already
+    // uses, or a short segment clips its label at phone width.
+    expect(css).toMatch(/@media \(max-width: 33\.99rem\)\s*\{[\s\S]*?\.hist-band\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/@media \(max-width: 33\.99rem\)\s*\{[\s\S]*?\.hist-list\s*\{\s*display:\s*block/);
+    // The alarm colour means suspect and nothing else, so the band must never
+    // be drawn in it.
+    // Comments stripped first. The history block carries a comment saying the
+    // band must never be --hot, and a raw substring search matches the warning
+    // itself, so the guard failed on the very rule it was written to protect.
+    const history = css
+      .slice(css.indexOf(".history {"))
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(history).not.toContain("--hot");
   });
 });

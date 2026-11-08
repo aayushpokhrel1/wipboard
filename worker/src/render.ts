@@ -12,11 +12,29 @@
 // and so are its gestures. The design system is documented in DESIGN.md; the
 // rules a reader of this file must not break are comments at the code below.
 
-export const PAYLOAD_VERSION = 2;
+// The version this Worker prefers, and the one it names when it refuses a
+// payload it cannot read.
+export const PAYLOAD_VERSION = 3;
+
+// Every version this Worker can still render. The CLI pushes unattended every
+// 15 minutes, so a Worker that accepted only the version it prefers would turn
+// every scheduled push into a 400 in a log nobody reads the moment the two
+// sides were deployed in the wrong order. Accepting both is what lets this
+// Worker ship before the CLI that sends version 3.
+export const ACCEPTED_PAYLOAD_VERSIONS = [2, 3];
 
 export interface Commit {
   at: string | null;
   subject: string;
+}
+
+// One recorded stage change. `inferred` marks the segment the CLI derives from
+// the repository's first commit rather than from a `wipboard set`: it is a
+// guess about the past and it must never be read as a record.
+export interface StageEntry {
+  stage: string;
+  at: string;          // ISO
+  inferred?: boolean;  // true = derived from the first commit, not a recorded change
 }
 
 export interface Project {
@@ -36,6 +54,13 @@ export interface Project {
   recent?: Commit[];
   uncommitted?: string[];
   next?: { items: string[]; source: string };
+  // Version 3. Optional for the same reason as the block above: a version 2
+  // payload is still a version this Worker accepts, and a missing field must
+  // render as absent rather than as undefined.
+  weeks?: number[];           // commit counts per 7-day bucket, OLDEST FIRST
+  week_start?: string | null; // ISO timestamp of the oldest bucket's start
+  first_commit?: string | null;
+  stage_history?: StageEntry[];
 }
 
 export interface Board {
@@ -734,6 +759,117 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .single .log li { font-size: .74rem; }
 .single .log .when { flex-basis: 3.2rem; }
 
+/* HISTORY: the chart, the stage band and the scale line, all on one axis.
+   The chart and the band are separate boxes that share a width and nothing
+   else, so the band's segments are positioned as percentages of the same span
+   the bars divide evenly. That is what makes "the stage at this week" a
+   vertical read rather than an arithmetic one. */
+.history { margin-top: 1.6rem; }
+/* The heading is the board's own .section rule, so this reads as a third
+   section of the same instrument. It keeps that rule's side margins, which
+   would inset it from the blocks around it, so they are cancelled here. */
+.history > .section { margin: 0 0 .6rem; }
+/* The bars sit on a baseline, not in a row of boxes: a bar's height is the
+   only thing that carries its value, so the bottom edge has to be exact and
+   the gap has to be small enough that 26 buckets still read as one series. */
+.hist-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 4.5rem;
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--line);
+}
+/* A zero bucket is a rule, not an absent element. Dropping it would close the
+   gap and make a quiet month look like a short project, which is the one
+   misreading this chart exists to prevent. */
+.hist-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--h, 0%);
+  min-height: 1px;
+  background: var(--accent);
+}
+.hist-bar.zero { height: 1px; background: var(--line); }
+/* The band. --chip with a --line border, never --hot: the alarm colour means
+   suspect everywhere on this page, and a stage change is not an alarm. It is
+   not --accent either, or the band would read as part of the chart above it. */
+.hist-band {
+  position: relative;
+  height: 2.1rem;
+  margin-top: 3px;
+}
+.hist-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--l, 0%);
+  width: var(--w, 0%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .05rem;
+  padding: 0 .3rem;
+  overflow: hidden;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .56rem;
+  line-height: 1.15;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+}
+.hist-seg .hist-for { color: var(--dim); letter-spacing: .04em; }
+/* The inferred segment is marked with an asterisk in its own label and a
+   footnote under the section, both text. A tint would be the only channel for
+   a guess presented as a record, which is the failure the whole tool exists to
+   prevent. */
+.hist-seg.inferred { border-style: dashed; }
+/* The phone list. Below 34rem a segment can be a few pixels wide and a clipped
+   label is worse than a list, so the band is hidden and the same entries print
+   as lines. Both are in the markup; only one is ever visible. */
+.hist-list {
+  display: none;
+  margin: .5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .66rem;
+  color: var(--dim);
+}
+.hist-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 .5rem;
+  padding: .18rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.hist-list .hist-stage { color: var(--text); text-transform: uppercase; letter-spacing: .08em; }
+.hist-list .hist-at { margin-left: auto; }
+/* A project with no chart has no axis for a band to align to, so the list is
+   the trail at every width rather than a row of boxes floating on nothing. */
+.hist-list.alone { display: block; }
+/* The scale line: span, total, now. It is the chart's text twin, which is what
+   lets the chart be one role="img" label instead of 26 labelled bars. */
+.hist-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: .6rem;
+  margin: .35rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .6rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.hist-note { margin: .4rem 0 0; font-size: .68rem; color: var(--dim); }
+@media (max-width: 33.99rem) {
+  .hist-band { display: none; }
+  .hist-list { display: block; }
+}
+
 /* Nothing pushed, or a payload this Worker cannot read. */
 .empty {
   margin: 1.2rem 1.1rem 0;
@@ -859,6 +995,162 @@ ${section(rest, "the rest", false)}`;
   return page("wipboard", body);
 }
 
+// A span of time as words, for the scale line and the chart's own label. Days
+// rather than weeks once the span stops dividing evenly, because "1.4 weeks"
+// is a number nobody reads.
+function spanWords(ms: number): string {
+  const days = Math.max(0, Math.round(ms / DAY_MS));
+  if (days < 14) return `${days} ${days === 1 ? "day" : "days"}`;
+  const weeks = Math.round(days / 7);
+  return `${weeks} weeks`;
+}
+
+// A date as the band and the phone list print it: "27 Aug", with the year only
+// when it is not this one, so a two-year-old project does not read as if it
+// started this summer.
+function shortDate(ms: number, now: number): string {
+  const date = new Date(ms);
+  const month = date.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
+  const sameYear = new Date(now).getUTCFullYear() === date.getUTCFullYear();
+  return sameYear ? `${date.getUTCDate()} ${month}` : `${date.getUTCDate()} ${month} ${date.getUTCFullYear()}`;
+}
+
+// The HISTORY section of a project page, and the only place on the page where
+// the past is drawn rather than stated. It answers three questions the board
+// cannot: has this been alive, where does it get stuck, and what was I doing
+// last time.
+//
+// The chart and the band share one horizontal axis on purpose. Two separate
+// facts ("here are the commits", "here are the stages") would be a report; the
+// point of this section is reading the stage at any week by looking straight
+// down from that week's bar, so both are laid out against the same span.
+//
+// Returns "" when there is nothing to say. A box that says nothing is worse
+// than no box, and a project with neither a first commit nor a stage trail has
+// no history this page can honestly draw.
+function renderHistory(project: Project, now: number): string {
+  const weeks = project.weeks ?? [];
+  const history = project.stage_history ?? [];
+  const firstCommit = parseStamp(project.first_commit ?? null);
+  if (firstCommit === null && history.length === 0) return "";
+
+  // The span is the project's own life, not a fixed window: a fixed 26-week
+  // axis would draw most pages as a long flat run of nothing, which reads as
+  // "dead" when the truth is "did not exist yet".
+  const weekStart = parseStamp(project.week_start ?? null);
+  const charted = project.has_git && weeks.length > 0;
+  const spanStart = charted
+    ? weekStart ?? firstCommit ?? now - weeks.length * 7 * DAY_MS
+    : firstCommit ?? parseStamp(history[0]?.at ?? null) ?? now;
+  const spanEnd = Math.max(now, spanStart + 1);
+  const span = spanEnd - spanStart;
+  const total = weeks.reduce((sum, count) => sum + count, 0);
+  const peak = weeks.reduce((most, count) => Math.max(most, count), 0);
+  const spanText = spanWords(span);
+
+  // One bar per bucket, oldest first, scaled to this project's own peak. A
+  // zero bucket is a 1px rule rather than an absent element: a gap has to read
+  // as a gap, and a missing bar reads as a missing week.
+  //
+  // The label states the span and the total rather than labelling 26 bars: the
+  // scale line below carries the same two facts as text, so the chart can be
+  // one image to a screen reader instead of a wall of numbers.
+  const bars = charted
+    ? `<div class="hist-chart" role="img" aria-label="${escapeHtml(
+        `${total} ${total === 1 ? "commit" : "commits"} over ${spanText} since ${shortDate(
+          spanStart,
+          now,
+        )}`,
+      )}">${weeks
+        .map((count) => {
+          const value = Number.isFinite(count) ? Math.max(0, count) : 0;
+          const height = peak > 0 ? Math.round((value / peak) * 100) : 0;
+          return `<span class="hist-bar${value === 0 ? " zero" : ""}" style="--h:${height}%"></span>`;
+        })
+        .join("")}</div>`
+    : "";
+
+  // The band. Each segment starts where its entry was recorded and runs until
+  // the next one, so the last segment runs to now. The left edge and width are
+  // computed here rather than in CSS because they are data: a stylesheet
+  // cannot know when a stage changed.
+  //
+  // It is only drawn when there is a chart above it to align to. Without one
+  // the band would be a row of boxes on an axis nothing else shares, so the
+  // list carries the trail on its own at every width.
+  const segments = charted
+    ? history
+        .map((entry, index) => {
+          const at = parseStamp(entry.at);
+          if (at === null) return "";
+          const nextAt = parseStamp(history[index + 1]?.at ?? null) ?? spanEnd;
+          const left = Math.min(100, Math.max(0, ((at - spanStart) / span) * 100));
+          const right = Math.min(100, Math.max(left, ((nextAt - spanStart) / span) * 100));
+          const duration = spanWords(Math.max(0, nextAt - at));
+          const mark = entry.inferred ? "*" : "";
+          return `<span class="hist-seg${entry.inferred ? " inferred" : ""}" style="--l:${left.toFixed(
+            2,
+          )}%;--w:${(right - left).toFixed(2)}%">
+          <span class="hist-stage">${escapeHtml(entry.stage)}${mark}</span>
+          <span class="hist-for">${escapeHtml(duration)}</span>
+        </span>`;
+        })
+        .join("")
+    : "";
+  // The same entries as lines: "stage — date — duration". This is what a phone
+  // gets instead of the band, and what a project with no chart gets at every
+  // width.
+  const list = history.length
+    ? `<ol class="hist-list${charted ? "" : " alone"}">${history
+        .map((entry, index) => {
+          const at = parseStamp(entry.at);
+          const nextAt = parseStamp(history[index + 1]?.at ?? null) ?? spanEnd;
+          const mark = entry.inferred ? "*" : "";
+          return `<li><span class="hist-stage">${escapeHtml(entry.stage)}${mark}</span>
+          <span class="hist-at">${escapeHtml(at === null ? "-" : shortDate(at, now))}</span>
+          <span class="hist-for">${escapeHtml(
+            at === null ? "-" : spanWords(Math.max(0, nextAt - at)),
+          )}</span></li>`;
+        })
+        .join("")}</ol>`
+    : "";
+  const band = segments ? `<div class="hist-band">${segments}</div>${list}` : list;
+
+  // The mark is text, never colour: an inferred segment is a guess about the
+  // past, and presenting a guess as a record is the failure this whole tool
+  // exists to prevent.
+  const footnote = history.some((entry) => entry.inferred)
+    ? `<p class="hist-note">* Inferred from the first commit. Not a recorded change.</p>`
+    : "";
+
+  // The scale line is the chart's text twin, and the reason the chart can be
+  // role="img" with one label instead of 26 labelled bars.
+  const scale = charted
+    ? `<p class="hist-scale">
+      <span>${escapeHtml(spanText)}</span>
+      <span>${escapeHtml(`${total} ${total === 1 ? "commit" : "commits"}`)}</span>
+      <span>now</span>
+    </p>`
+    : "";
+
+  // No log here. The project page already has a `recent` section and this one
+  // grew a second copy of it, so the page printed the same commits twice. The
+  // depth belongs to that section, which now keeps five open and puts the rest
+  // behind a drawer.
+  //
+  // No count on the heading either. The board's cuts count projects, so a
+  // number beside this heading reads as a count of the same kind; it was the
+  // number of stage changes, which told the reader "HISTORY 3" and meant
+  // nothing. The commit total is in the scale line, where it has a unit.
+  return `<section class="block history">
+    <h2>history</h2>
+    ${bars}
+    ${band}
+    ${scale}
+    ${footnote}
+  </section>`;
+}
+
 // One project in full. Everything the payload holds about it, with nothing
 // capped for space the way the board caps things, because this page exists
 // precisely for the reader who wanted more than the frame had room for.
@@ -899,17 +1191,27 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
     <h2>next</h2>
     <p class="absent">This project has no HANDOVER.md, TODO or plan for the board to read.</p>
   </section>`;
+  // The handful stays open and the depth opens on press. This page exists for
+  // the reader who wanted more than the board had room for, so burying all of
+  // it behind a drawer would take away the thing the page is for; printing
+  // twenty entries openly would bury the sections under it instead.
   const commits = project.recent ?? [];
+  const entry = (commit: Commit) =>
+    `<li><span class="when">${escapeHtml(humanAge(parseStamp(commit.at), nowMs))}</span>
+      <span class="what">${escapeHtml(commit.subject)}</span></li>`;
+  const rest = commits.slice(5);
   const log = commits.length
     ? `<section class="block">
     <h2>recent</h2>
-    <ol class="log">${commits
-      .map(
-        (commit) =>
-          `<li><span class="when">${escapeHtml(humanAge(parseStamp(commit.at), nowMs))}</span>
-          <span class="what">${escapeHtml(commit.subject)}</span></li>`,
-      )
-      .join("")}</ol>
+    <ol class="log">${commits.slice(0, 5).map(entry).join("")}</ol>
+    ${
+      rest.length
+        ? `<details class="drawer">
+        <summary>${escapeHtml(`${rest.length} older`)}</summary>
+        <ol class="log">${rest.map(entry).join("")}</ol>
+      </details>`
+        : ""
+    }
   </section>`
     : "";
   const paths = project.uncommitted ?? [];
@@ -942,6 +1244,7 @@ export function renderProject(payload: Board, project: Project, now: Date): stri
   </div>
   </div>
   ${project.note ? `<p class="note">${escapeHtml(project.note)}</p>` : ""}
+  ${renderHistory(project, nowMs)}
   ${next}
   ${log}
   ${uncommitted}

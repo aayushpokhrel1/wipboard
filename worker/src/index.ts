@@ -1,4 +1,5 @@
 import {
+  ACCEPTED_PAYLOAD_VERSIONS,
   PAYLOAD_VERSION,
   renderBoard,
   renderEmpty,
@@ -125,7 +126,10 @@ async function ingest(request: Request, env: Env): Promise<Response> {
   }
 
   const version = (payload as { version?: unknown }).version;
-  if (version !== PAYLOAD_VERSION) {
+  // Either accepted version, not only the one this Worker prefers. The CLI
+  // pushes unattended every 15 minutes, so refusing the version it still sends
+  // would turn every scheduled push into a 400 in a log nobody reads.
+  if (!ACCEPTED_PAYLOAD_VERSIONS.includes(version as number)) {
     return new Response(`unsupported payload: version must be ${PAYLOAD_VERSION}`, {
       status: 400,
     });
@@ -160,8 +164,10 @@ async function readBoard(env: Env): Promise<Board | Response> {
 
   // A version this Worker does not know means the CLI was upgraded and the
   // Worker was not. Say so rather than throwing or rendering half a board.
+  // Both accepted versions render: a version 2 payload simply has no history
+  // fields, and every one of them is optional.
   const version = (payload as { version?: unknown } | null)?.version;
-  if (version !== PAYLOAD_VERSION) {
+  if (!ACCEPTED_PAYLOAD_VERSIONS.includes(version as number)) {
     return html(renderVersionMismatch(version));
   }
 
