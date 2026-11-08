@@ -310,6 +310,38 @@ Check it with `(Get-ScheduledTaskInfo -TaskName 'wipboard push').LastTaskResult`
 success**; anything else means the board is quietly freezing while the task reports itself
 as scheduled, so this is worth looking at once rather than trusting.
 
+#### Register it through a windowless launcher, or it pops a terminal every 15 minutes
+
+A task that runs as the logged-on user gets a real console window whenever its action is
+`wipboard`, a `.cmd`, `cmd.exe` or `powershell.exe`, so the desktop flashes a terminal four
+times an hour. PowerShell's own `-WindowStyle Hidden` does not prevent it: the console is
+created before the style is applied. Measured on 2026-11-07, when this task was the window
+and the other 15-minute task on the same machine was only a flash.
+
+Give the task `wscript.exe` and a launcher instead, which creates the process with no window
+at all:
+
+```vb
+' run-hidden.vbs -- usage: wscript.exe run-hidden.vbs "<exe>" "<arg>" ...
+Set sh = CreateObject("WScript.Shell")
+cmd = """" & WScript.Arguments(0) & """"
+For i = 1 To WScript.Arguments.Count - 1
+  cmd = cmd & " """ & WScript.Arguments(i) & """"
+Next
+WScript.Quit sh.Run(cmd, 0, True)
+```
+
+```powershell
+$action = New-ScheduledTaskAction -Execute 'wscript.exe' `
+  -Argument '"C:\path\to\run-hidden.vbs" "C:\path\to\wipboard-push.cmd"'
+```
+
+`sh.Run(..., 0, True)` waits and returns the child's exit code, so `LastTaskResult` stays
+meaningful. The windowless alternative is an S4U principal ("run whether user is logged on or
+not"), which runs in session 0: it needs elevation to register, and it cannot decrypt
+DPAPI-protected user secrets, so a task that reads Windows Credential Manager breaks there.
+This task does not, since the push token comes from a plain config file.
+
 #### If `-Execute 'wipboard'` fails under the task but works in your shell
 
 Symptom: `LastTaskResult` is 1 and the task writes
