@@ -926,3 +926,94 @@ def test_next_item_cut_lands_on_a_word_boundary(tmp_path: Path) -> None:
     assert items[0].endswith("…")
     assert items[0][:-1].endswith("alpha")
     assert len(items[0]) <= wipboard.NEXT_MAX_CHARS + 1
+
+
+def test_project_git_info_merges_child_repositories(tmp_path: Path) -> None:
+    """Catches a folder of repos still reporting no git, which is the whole bug.
+
+    One real project is three child repositories with 157 commits between them
+    and the board showed it as dead because git_info answers None for a folder
+    that only contains repos.
+    """
+    base = datetime(2026, 1, 1, 12, 0)
+    project = tmp_path / "project"
+    make_repo(project / "app", when=base, message="app work")
+    make_repo(project / "api", when=base + timedelta(hours=5), message="api work")
+    make_repo(project / "docs", when=base + timedelta(hours=2), message="docs work")
+    # One dirty child is enough to make the whole project dirty.
+    (project / "docs" / "notes.md").write_text("x\n", encoding="utf-8")
+
+    info = wipboard.project_git_info(project)
+
+    assert info is not None
+    # The newest child decides the commit, the branch and the subject.
+    assert info["last_commit"] == base + timedelta(hours=5)
+    assert info["branch"] == "main"
+    assert info["subject"] == "api work"
+    assert info["dirty"] is True
+    # No upstream anywhere, so ahead sums to zero; changed sums the one file.
+    assert info["ahead"] == 0
+    assert info["changed"] == 1
+
+
+def test_project_git_info_prefixes_child_paths_with_the_child_name(tmp_path: Path) -> None:
+    """Catches a child path shown under the parent without its folder prefix.
+
+    "src/app.ts" inside budgerr-app must read "budgerr-app/src/app.ts", because
+    the path is displayed under the parent project and has to resolve from there.
+    """
+    project = tmp_path / "project"
+    child = project / "budgerr-app"
+    make_repo(child, when=datetime(2026, 1, 1, 12, 0))
+    (child / "src").mkdir()
+    (child / "src" / "app.ts").write_text("x\n", encoding="utf-8")
+    # Staged, not merely created. `git status --porcelain` collapses a wholly
+    # untracked directory to "src/" and never names the file inside it, so an
+    # unstaged file here would test the prefix against "src/" and prove nothing
+    # about joining a path that itself contains a slash. That collapsing is
+    # git_info's long-standing behaviour and is not this function's business.
+    subprocess.run(["git", "add", "src/app.ts"], cwd=child, check=True, capture_output=True)
+
+    info = wipboard.project_git_info(project)
+
+    assert info["paths"] == ["budgerr-app/src/app.ts"]
+
+
+def test_project_git_info_on_a_repo_matches_git_info(tmp_path: Path) -> None:
+    """Catches the common path drifting: a repo folder must answer exactly as before."""
+    repo = tmp_path / "repo"
+    make_repo(repo, when=datetime(2026, 1, 1, 12, 0), message="only")
+    (repo / "wipboard.py").write_text("x\n", encoding="utf-8")
+
+    assert wipboard.project_git_info(repo) == wipboard.git_info(repo)
+
+
+def test_project_git_info_returns_none_when_no_child_is_a_repo(tmp_path: Path) -> None:
+    """Catches a plain folder of plain folders inventing git state."""
+    project = tmp_path / "project"
+    (project / "one").mkdir(parents=True)
+    (project / "two").mkdir()
+
+    assert wipboard.project_git_info(project) is None
+
+
+def test_project_git_info_recent_is_newest_first_across_children_and_capped(
+    tmp_path: Path,
+) -> None:
+    """Catches recent concatenated in child order, or the cap of 5 dropped."""
+    base = datetime(2026, 1, 1, 12, 0)
+    project = tmp_path / "project"
+    # Interleaved in time on purpose: child order and time order disagree, so a
+    # merge that forgot to sort cannot pass by accident.
+    make_repo(project / "a", when=base, message="a0")
+    commit(project / "a", base + timedelta(hours=4), message="a1")
+    commit(project / "a", base + timedelta(hours=8), message="a2")
+    make_repo(project / "b", when=base + timedelta(hours=1), message="b0")
+    commit(project / "b", base + timedelta(hours=5), message="b1")
+    commit(project / "b", base + timedelta(hours=9), message="b2")
+
+    info = wipboard.project_git_info(project)
+
+    assert [entry["subject"] for entry in info["recent"]] == ["b2", "a2", "b1", "a1", "b0"]
+    assert len(info["recent"]) == 5
+    assert info["recent"][0]["at"] == info["last_commit"]

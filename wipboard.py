@@ -229,6 +229,63 @@ def git_info(repo: Path) -> dict | None:
     }
 
 
+# A project folder is often not a repo itself but a container for several: one
+# real project here is three child repositories with 157 commits between them,
+# and git_info answered None for it, so the board showed it as dead. This merges
+# the immediate children into the one dict shape git_info returns, so every
+# caller downstream is unchanged. It looks exactly ONE level down and calls
+# git_info on each child, never itself: recursing would walk a whole tree on
+# every run.
+#
+# The paths prefix is correctness, not decoration. A path "src/app.ts" inside the
+# child "budgerr-app" is shown under the parent project, so it must read
+# "budgerr-app/src/app.ts" to resolve from there. Do not remove the prefix.
+def project_git_info(folder: Path) -> dict | None:
+    """git_info for folder, or the merge of its immediate child repositories."""
+    # The common path, and it must stay byte-identical to git_info's answer.
+    if (folder / ".git").exists():
+        return git_info(folder)
+    # An unreadable folder degrades to "no git" rather than raising, the same
+    # way every git call in this module does.
+    try:
+        children = sorted(child for child in folder.iterdir() if child.is_dir())
+    except OSError:
+        return None
+    infos: list[tuple[str, dict]] = []
+    for child in children:
+        # A hidden child is not a project, and it is skipped before git is asked
+        # so a .venv or .git directory never costs a process spawn.
+        if child.name.startswith("."):
+            continue
+        info = git_info(child)
+        if info is None:
+            continue
+        infos.append((child.name, info))
+    if not infos:
+        return None
+    # Sorted by name above, so ties on last_commit resolve the same way every
+    # run and the board does not reshuffle between pushes.
+    _, newest = max(infos, key=lambda pair: pair[1]["last_commit"])
+    recent = sorted(
+        (entry for _, info in infos for entry in info["recent"]),
+        key=lambda entry: entry["at"],
+        reverse=True,
+    )
+    # A forward slash literal, not os.sep: these strings are displayed and
+    # pushed as JSON, never opened, so they must read the same on every platform.
+    paths = [f"{name}/{path}" for name, info in infos for path in info["paths"]]
+    return {
+        "last_commit": newest["last_commit"],
+        "branch": newest["branch"],
+        "dirty": any(info["dirty"] for _, info in infos),
+        "ahead": sum(info["ahead"] for _, info in infos),
+        "subject": newest["subject"],
+        "changed": sum(info["changed"] for _, info in infos),
+        "recent": recent[:5],
+        "paths": paths[:8],
+    }
+
+
 # What the next work looks like is read fresh on every run from files the author
 # already maintains, and is never written to the store. The caps are a budget:
 # this rides in the push body, which the Worker limits to 1 MiB.
@@ -505,7 +562,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
         stage_set_at = _parse_stage_set_at(entry.get("stage_set_at"))
         folder = _find_project_dir(name, roots)
         missing = folder is None
-        info = git_info(folder) if folder is not None else None
+        info = project_git_info(folder) if folder is not None else None
         has_git = info is not None
         # A missing project has no folder to read, so it answers nothing rather
         # than being asked.
@@ -539,7 +596,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
             if child.name.startswith(".") or child.name.startswith("__"):
                 continue
             seen.add(child.name)
-            info = git_info(child)
+            info = project_git_info(child)
             has_git = info is not None
             next_items, next_source = project_next(child)
             rows.append(
