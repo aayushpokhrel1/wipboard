@@ -156,6 +156,14 @@ In the Zero Trust dashboard, <https://one.dash.cloudflare.com>:
    reasonable for a board only you read.
 3. Public hostname: subdomain `wipboard`, domain `enamelvault.com`, path empty.
 4. Policy: name it, Action **Allow**, Include **Emails**, your address. Save.
+   **Add a One-time PIN login method** under Access, Authentication before you rely on
+   this. A new account's only identity provider is `cloudflare`, the dashboard login, so
+   proving your address means a full `dash.cloudflare.com` sign-in with a Turnstile
+   challenge in front of it. That challenge fails outright in an embedded browser
+   (`Turnstile Error: 600010`) and is miserable on a phone, which is the device this board
+   was built to be read on. One-time PIN emails a six-digit code instead and shows up as a
+   second option on the same login screen. The tradeoff is explicit: whoever can read that
+   inbox can reach the board, with no second factor between them and it.
 5. **Add a second application** for the same hostname with path `api/board`, and give it one
    policy with Action **Bypass** and Include **Everyone**.
 
