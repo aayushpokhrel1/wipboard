@@ -629,10 +629,15 @@ def test_a_redirected_push_fails_instead_of_reporting_success(
     """The whole reason this change is not just two extra headers.
 
     urllib installs HTTPRedirectHandler by default and it rewrites a redirected
-    POST into a GET. An Access rejection is a 302 to the login page, so without
-    this guard the push follows it, fetches HTML, sees 200, and prints "Pushed
-    19 project(s)" with the board never delivered. Unattended every 15 minutes,
-    that is a dashboard going stale while every signal says it is fine.
+    POST into a GET, so without this guard the push follows the redirect,
+    fetches HTML, sees 200, and prints "Pushed 19 project(s)" with the board
+    never delivered. Unattended every 15 minutes, that is a dashboard going
+    stale while every signal says it is fine.
+
+    Measured on 2026-11-08: a wrong service token is a 401 and a missing one
+    under a Service Auth policy is a 403, neither of which needs this. The
+    redirect is what an *identity* policy does, which the ingest endpoint is
+    one deleted Access application away from being behind.
     """
 
     landed = "https://login.cloudflareaccess.com/cdn-cgi/access/login?meta=eyJhbGciOi.tokenpayload"

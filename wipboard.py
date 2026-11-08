@@ -941,11 +941,21 @@ def _post(
     with urllib.request.urlopen(request, timeout=PUSH_TIMEOUT) as response:
         # A redirect here is a failed push wearing a 200. urllib installs
         # HTTPRedirectHandler by default and it rewrites a redirected POST into
-        # a GET, so an Access rejection (302 to the login page) is followed,
-        # fetches HTML, and returns 200 with the board never delivered. On a
-        # 15-minute unattended schedule that reads as "Pushed 19 project(s)"
-        # forever while the dashboard quietly goes stale, which is the one
-        # failure this whole tool exists to make impossible.
+        # a GET, so a redirect is followed, fetches HTML, and returns 200 with
+        # the board never delivered. On a 15-minute unattended schedule that
+        # reads as "Pushed 19 project(s)" forever while the dashboard quietly
+        # goes stale, which is the one failure this whole tool exists to make
+        # impossible.
+        #
+        # Measured against Cloudflare Access on 2026-11-08, because the shape
+        # of a rejection is not obvious: a wrong service token is a 401 and a
+        # missing one under a Service Auth policy is a 403, both of which raise
+        # HTTPError and need no help from here. The redirect is what an
+        # *identity* policy does, and this endpoint is not behind one today.
+        # It is one deletion away from being behind one: remove the api/board
+        # Access application and the hostname-wide application takes that path,
+        # answering an unauthenticated POST with a 302 to the login page. The
+        # guard costs one comparison and turns that from silent into loud.
         #
         # Comparing the final URL catches every shape of it without disabling
         # redirects, and no correct response to this POST is ever a redirect.

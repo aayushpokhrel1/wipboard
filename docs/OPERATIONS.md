@@ -196,10 +196,11 @@ is ignored, so the CLI can be carrying one long before the policy changes.
 
 1. **Zero Trust, Access, Service Auth, Create Service Token.** Name it `wipboard-push`. The
    Client Secret is shown once.
-2. Give the token to the CLI, either in `~/.config/wipboard/config.json` as
-   `access_client_id` and `access_client_secret`, or as `WIPBOARD_ACCESS_CLIENT_ID` and
-   `WIPBOARD_ACCESS_CLIENT_SECRET`. The scheduled task uses the environment, so put them in
-   `wipboard-push.cmd` beside the command.
+2. Add `access_client_id` and `access_client_secret` to `~/.config/wipboard/config.json`.
+   That one file covers both callers: `wipboard-push.cmd` sets no environment variables, so
+   the scheduled task reads the same config as your shell. The `WIPBOARD_ACCESS_CLIENT_ID`
+   and `WIPBOARD_ACCESS_CLIENT_SECRET` variables exist and override the file, but nothing
+   here needs them.
 3. Run `wipboard push` and confirm it still succeeds. It is still going through Bypass here;
    this step only proves the headers do no harm.
 4. **Only now** edit the `api/board` application: replace the Bypass policy with one whose
@@ -207,14 +208,49 @@ is ignored, so the CLI can be carrying one long before the policy changes.
 5. Run `wipboard push` again. A success means the token is being read.
 
 Both halves or neither: the CLI refuses a half-configured token by name rather than letting
-Access reject it as a login redirect.
+Access reject it.
 
-**Check the failure, not just the success.** Unset one of the two variables and push. It must
-exit 2 saying the push was redirected. If it instead prints `Pushed N project(s)`, the
-redirect guard in `_post` is gone and the next silent breakage will not be noticed: urllib
-follows a redirected POST as a GET, so an Access rejection fetches the login page and returns
-200. On a 15-minute unattended schedule that reads as success forever while the board goes
-stale. A test covers this, and the comment at `_post` in `wipboard.py` says why.
+Done on 2026-11-08 through the API rather than the dashboard. The Bypass policy was
+**detached, not deleted**: it is a reusable account-level policy, so `DELETE` on the app's
+policy endpoint returns 12130 "can not delete reusable policies through this endpoint". It
+still exists at account level and re-attaching it is the rollback.
+
+**Rollback:** attach the account-level Bypass policy back to the `api/board` application.
+That returns the endpoint to its pre-2026-11-08 state and the push works again at once. The
+CLI needs no change; a service token sent to a Bypass policy is ignored.
+
+#### What a rejection actually looks like, measured
+
+Worth knowing before you debug one, because Access does not answer the same way every time.
+Measured on 2026-11-08 against this endpoint:
+
+| Request | Access answers | `wipboard push` |
+| --- | --- | --- |
+| Correct service token | passes to the Worker | `Pushed N project(s)`, exit 0 |
+| Wrong Client Secret | `401` | `failed: HTTP 401`, exit 2 |
+| No token at all, Service Auth policy | `403` | `failed: HTTP 403`, exit 2 |
+| No token where an **identity** policy matches | `302` to the login page | `Push was redirected to ...`, exit 2 |
+
+Only the last row is the dangerous one, and only the guard in `_post` makes it safe. urllib
+follows a redirected POST as a GET, so without that check the push fetches the login page,
+sees `200`, and prints `Pushed N project(s)` having delivered nothing. It needs an identity
+policy to match, which is not the case today but becomes the case the moment the `api/board`
+application is deleted or its path edited, because then the hostname-wide `wipboard`
+application takes over that path. That is an ordinary mistake with a silent, permanent
+consequence on an unattended 15-minute schedule.
+
+**Check the failure, not just the success,** and check the right one. The first three rows
+are ordinary HTTP errors. To exercise the guard itself, point the CLI at the hostname root
+with no service token configured:
+
+```bash
+WIPBOARD_ENDPOINT=https://wipboard.enamelvault.com/ wipboard push
+```
+
+It must exit 2 saying the push was redirected, and the message must name the origin only. An
+Access login URL carries a per-request JWT hundreds of characters long, and this message
+lands in an append-only log every 15 minutes. If it instead prints `Pushed N project(s)`, the
+guard is gone; a test covers it and the comment at `_post` in `wipboard.py` says why.
 
 ### Point the CLI at it
 
