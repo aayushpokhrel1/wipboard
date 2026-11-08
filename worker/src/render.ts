@@ -1000,6 +1000,15 @@ ${section(rest, "the rest", false)}`;
 // is a number nobody reads.
 function spanWords(ms: number): string {
   const days = Math.max(0, Math.round(ms / DAY_MS));
+  // Under a day, say hours. A stage set an hour ago rounded to "0 days" in the
+  // trail while the card above the chart said "1h in stage": the same fact,
+  // twice, in units that disagreed. Zero of anything also reads as "never
+  // happened", which is the opposite of "just now".
+  if (days < 1) {
+    const hours = Math.max(0, Math.floor(ms / (60 * 60 * 1000)));
+    if (hours < 1) return "under an hour";
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
   if (days < 14) return `${days} ${days === 1 ? "day" : "days"}`;
   const weeks = Math.round(days / 7);
   return `${weeks} weeks`;

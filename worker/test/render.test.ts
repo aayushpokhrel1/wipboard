@@ -254,6 +254,26 @@ describe("renderProject history", () => {
     expect(band).toContain('title="building, ');
   });
 
+  it("says hours, not 0 days, for a stage set within the day", () => {
+    // The card above the chart says "1h in stage". The trail said "0 days" for
+    // the same fact, and zero of anything reads as "never happened".
+    const html = renderProject(
+      board(),
+      project({
+        weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        week_start: "2026-08-11T12:00:00",
+        first_commit: "2026-08-11T12:00:00",
+        stage_history: [
+          { stage: "idea", at: "2026-08-11T12:00:00", inferred: true },
+          { stage: "building", at: "2026-10-20T11:00:00" },
+        ],
+      }),
+      NOW,
+    );
+    expect(html).not.toContain("0 days");
+    expect(html).toContain("1 hour");
+  });
+
   it("labels the left end of the scale with a date, not a duration", () => {
     // It sits opposite "now", so an instant belongs there. A duration there
     // read as a second, disagreeing copy of the segment's own length.
