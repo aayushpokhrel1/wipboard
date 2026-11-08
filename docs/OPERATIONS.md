@@ -131,10 +131,16 @@ containing static files (e.g. html, css and js) for the project"**, which sends 
 the Worker instead of at your working directory. `npm run` executes in the package directory,
 so the script form is correct from anywhere. Hit on 2026-11-07.
 
-No `--var` flag: this deployment runs in **token mode** with Access in front, which is the
-tracked default, so there is nothing to override and nothing to forget on a later deploy. Set
-`VIEW_TOKEN` the same way as above. Deploy creates the DNS record for
-`wipboard.enamelvault.com` and prints it.
+No `--var` flag: this deployment runs in **access mode**, tracked in `wrangler.jsonc`, so
+there is nothing to override and nothing to forget on a later deploy. It ran in token mode
+with Access in front until 2026-11-08, and the two gates stacked badly: Access identified
+the reader, then the Worker answered a bare `401` because it wanted its own cookie, which had
+to be cleared once per browser. `VIEW_TOKEN` is not read in this mode. Deploy creates the DNS
+record for `wipboard.enamelvault.com` and prints it.
+
+**Access mode rests on two things, and the Worker verifies neither.** `workers_dev` must stay
+`false`, and the only route must be a hostname an Access application covers. If either stops
+being true the board is public, so flip `AUTH_MODE` back to `token` before changing either.
 
 ### Lock it down BEFORE pushing a real board
 

@@ -8,7 +8,16 @@
     // VIEW_TOKEN cookie. "access" turns that off and trusts something upstream,
     // which is only correct if you have actually put Cloudflare Access, or an
     // equivalent, in front of this hostname. Nothing here verifies that you did.
-    "AUTH_MODE": "token"
+    //
+    // "access" since 2026-11-08. Cloudflare Access covers this hostname, and
+    // stacking the Worker's own cookie behind it bought nothing: the second
+    // gate answered a bare 401 to a reader Access had already identified, and
+    // it had to be cleared once per browser, which is hostile on the phone this
+    // board is read on. Two preconditions make this safe and both are checked
+    // above and below: "workers_dev" is false, so there is no unprotected copy
+    // on workers.dev, and the only route is the hostname Access guards. Flip
+    // this back to "token" the moment either stops being true.
+    "AUTH_MODE": "access"
   },
   // workers_dev MUST stay false. Access cannot protect a *.workers.dev hostname,
   // so if this were true the board would also answer, unauthenticated, at
