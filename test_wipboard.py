@@ -238,8 +238,13 @@ def test_empty_commit_subject_does_not_raise(tmp_path: Path) -> None:
     assert info["subject"] == ""
 
 
-def test_recent_holds_five_commits_newest_first(tmp_path: Path) -> None:
-    """Catches the log call going back to -1, or the records arriving oldest first."""
+def test_recent_holds_up_to_twenty_commits_newest_first(tmp_path: Path) -> None:
+    """Catches the log call going back to -5 or -1, or records arriving oldest first.
+
+    It was -5 until 2026-11-08, when the project page grew a drawer that shows
+    the depth behind the five it prints openly. The board still slices what it
+    has room for; this is the one place the number is set.
+    """
     repo = tmp_path / "r"
     base = datetime(2026, 1, 1, 12, 0)
     make_repo(repo, when=base, message="c0")
@@ -248,8 +253,9 @@ def test_recent_holds_five_commits_newest_first(tmp_path: Path) -> None:
 
     info = wipboard.git_info(repo)
 
-    assert len(info["recent"]) == 5
-    assert [entry["subject"] for entry in info["recent"]] == ["c6", "c5", "c4", "c3", "c2"]
+    # Seven commits exist, so all seven arrive: twenty is a cap, not a target.
+    assert len(info["recent"]) == 7
+    assert [entry["subject"] for entry in info["recent"]][:5] == ["c6", "c5", "c4", "c3", "c2"]
     # last_commit and subject keep their old meaning: the first record's.
     assert info["recent"][0]["at"] == info["last_commit"]
     assert info["recent"][0]["subject"] == info["subject"] == "c6"
@@ -343,7 +349,7 @@ def test_board_payload_shape():
                      flags=["no git"], has_git=False),
     ]
     p = wipboard.board_payload(rows, datetime(2026, 10, 20, 12, 5), "HOST")
-    assert p["version"] == 2
+    assert p["version"] == 3
     assert p["generated_at"] == "2026-10-20T12:05:00"
     assert p["host"] == "HOST"
     assert p["projects"][0] == {
@@ -351,6 +357,14 @@ def test_board_payload_shape():
         "last_commit": "2026-10-20T12:00:00", "stage_set_at": "2026-10-01T09:00:00",
         "flags": ["!"], "has_git": True, "branch": "main", "subject": "s", "changed": 2,
         "recent": [], "uncommitted": [], "next": {"items": [], "source": ""},
+        # Version 3. A row built by hand carries no weeks and no first commit,
+        # and that stays empty rather than flooring to 8 zero buckets: the floor
+        # is for a young project with real git behind it, not for a row with
+        # none. Empty weeks is what tells the page to draw no chart at all, so
+        # inventing buckets here would put an all-zero chart on every project
+        # that has no git, which is the opposite of the intended degradation.
+        "stage_history": [], "first_commit": None,
+        "weeks": [], "week_start": None,
     }
     assert p["projects"][1]["last_commit"] is None
     assert p["projects"][1]["stage_set_at"] is None
@@ -458,7 +472,7 @@ def test_board_payload_carries_recent_uncommitted_and_next() -> None:
     p = wipboard.board_payload(rows, datetime(2026, 10, 20, 12, 5), "HOST")
     project = p["projects"][0]
 
-    assert p["version"] == 2
+    assert p["version"] == 3
     assert project["recent"] == [{"at": "2026-10-20T12:00:00", "subject": "s" * 120}]
     assert project["uncommitted"] == ["p" * 120]
     assert project["next"] == {"items": ["do the thing"], "source": "handover"}
@@ -1000,7 +1014,7 @@ def test_project_git_info_returns_none_when_no_child_is_a_repo(tmp_path: Path) -
 def test_project_git_info_recent_is_newest_first_across_children_and_capped(
     tmp_path: Path,
 ) -> None:
-    """Catches recent concatenated in child order, or the cap of 5 dropped."""
+    """Catches recent concatenated in child order, or the cap dropped."""
     base = datetime(2026, 1, 1, 12, 0)
     project = tmp_path / "project"
     # Interleaved in time on purpose: child order and time order disagree, so a
@@ -1014,6 +1028,169 @@ def test_project_git_info_recent_is_newest_first_across_children_and_capped(
 
     info = wipboard.project_git_info(project)
 
-    assert [entry["subject"] for entry in info["recent"]] == ["b2", "a2", "b1", "a1", "b0"]
-    assert len(info["recent"]) == 5
+    # Six commits across the two children, all inside the cap of 20.
+    assert [entry["subject"] for entry in info["recent"]] == ["b2", "a2", "b1", "a1", "b0", "a0"]
+    assert len(info["recent"]) == 6
     assert info["recent"][0]["at"] == info["last_commit"]
+
+
+def test_weeks_are_oldest_first_and_a_commit_lands_in_its_own_bucket(tmp_path: Path) -> None:
+    """Catches the buckets reversed, or a commit counted one bucket off its age."""
+    now = datetime(2026, 10, 20, 12, 0)
+    repo = tmp_path / "r"
+    # 3 days old is the newest bucket, 10 days old is the second newest, and
+    # 100 days old is bucket 25 - 14 = 11.
+    make_repo(repo, when=now - timedelta(days=100), message="old")
+    commit(repo, now - timedelta(days=10), message="middle")
+    commit(repo, now - timedelta(days=3), message="recent")
+
+    weeks = wipboard.git_info(repo, now)["weeks"]
+
+    assert len(weeks) == 26
+    assert weeks[25] == 1
+    assert weeks[24] == 1
+    assert weeks[11] == 1
+    assert sum(weeks) == 3
+
+
+def test_git_info_returns_26_buckets_whatever_the_repository_age(tmp_path: Path) -> None:
+    """Catches the span being trimmed in git_info, which would break the merge sum."""
+    now = datetime(2026, 10, 20, 12, 0)
+    young = tmp_path / "young"
+    make_repo(young, when=now - timedelta(days=2))
+    old = tmp_path / "old"
+    make_repo(old, when=now - timedelta(days=400))
+
+    assert len(wipboard.git_info(young, now)["weeks"]) == 26
+    assert len(wipboard.git_info(old, now)["weeks"]) == 26
+    # A commit older than the 182-day window falls in no bucket at all.
+    assert sum(wipboard.git_info(old, now)["weeks"]) == 0
+    assert wipboard.git_info(old, now)["first_commit"] == now - timedelta(days=400)
+
+
+def test_multi_repo_weeks_sum_and_first_commit_is_the_earliest(tmp_path: Path) -> None:
+    """Catches a merged project charting one child, or dating itself from the newest."""
+    now = datetime(2026, 10, 20, 12, 0)
+    project = tmp_path / "project"
+    make_repo(project / "a", when=now - timedelta(days=30), message="a0")
+    commit(project / "a", now - timedelta(days=3), message="a1")
+    make_repo(project / "b", when=now - timedelta(days=60), message="b0")
+    commit(project / "b", now - timedelta(days=3), message="b1")
+
+    info = wipboard.project_git_info(project, now)
+
+    a = wipboard.git_info(project / "a", now)["weeks"]
+    b = wipboard.git_info(project / "b", now)["weeks"]
+    assert info["weeks"] == [left + right for left, right in zip(a, b)]
+    assert info["weeks"][25] == 2
+    assert info["first_commit"] == now - timedelta(days=60)
+
+
+def test_payload_weeks_start_at_the_first_commit_and_floor_at_eight() -> None:
+    """Catches a fixed 26-week axis, which draws a young project as a long flat run."""
+    now = datetime(2026, 10, 20, 12, 0)
+    # 70 days old: the first commit is in bucket 25 - 10 = 15, so 11 buckets
+    # remain, above the floor of 8.
+    weeks = [0] * 26
+    weeks[15] = 4
+    weeks[25] = 2
+    row = wipboard.Row(
+        name="alpha", stage="building", note="", last_commit=now,
+        has_git=True, weeks=weeks, first_commit=now - timedelta(days=70, hours=1),
+    )
+    # 10 days old: only 2 buckets remain, so the floor keeps the last 8.
+    young = wipboard.Row(
+        name="beta", stage="idea", note="", last_commit=now,
+        has_git=True, weeks=[0] * 25 + [3], first_commit=now - timedelta(days=10),
+    )
+
+    p = wipboard.board_payload([row, young], now, "HOST")
+
+    assert p["projects"][0]["weeks"] == weeks[15:]
+    assert p["projects"][0]["week_start"] == (now - timedelta(days=11 * 7)).isoformat()
+    assert p["projects"][1]["weeks"] == [0] * 7 + [3]
+    assert p["projects"][1]["week_start"] == (now - timedelta(days=8 * 7)).isoformat()
+
+
+def test_set_appends_to_stage_history_and_never_rewrites_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Catches the trail being replaced by the latest stage, which is not a trail."""
+    store_file = tmp_path / "projects.json"
+    monkeypatch.setattr(wipboard, "store_path", lambda: store_file)
+    store_file.write_text('{"roots": [], "projects": {"X": {"stage": "idea"}}}')
+
+    assert wipboard.main(["set", "X", "building"]) == 0
+    first = wipboard.load_store(store_file)["projects"]["X"]["stage_history"]
+    assert wipboard.main(["set", "X", "testing"]) == 0
+    stored = wipboard.load_store(store_file)["projects"]["X"]
+
+    assert [entry["stage"] for entry in stored["stage_history"]] == ["building", "testing"]
+    # The earlier entry is byte-identical: an append, not a rewrite.
+    assert stored["stage_history"][0] == first[0]
+    # Each entry is stamped with the same instant as stage_set_at.
+    assert stored["stage_history"][-1]["at"] == stored["stage_set_at"]
+
+
+def test_payload_prepends_an_inferred_entry_and_never_stores_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Catches the inferred entry being written to the store, or not marked."""
+    store_file = tmp_path / "projects.json"
+    monkeypatch.setattr(wipboard, "store_path", lambda: store_file)
+    store_file.write_text('{"roots": [], "projects": {"X": {"stage": "idea"}}}')
+    assert wipboard.main(["set", "X", "building"]) == 0
+    before = store_file.read_bytes()
+
+    now = datetime(2026, 10, 20, 12, 0)
+    row = wipboard.Row(
+        name="X", stage="building", note="", last_commit=now, has_git=True,
+        first_commit=now - timedelta(days=40),
+        stage_history=wipboard.load_store(store_file)["projects"]["X"]["stage_history"],
+    )
+    project = wipboard.board_payload([row], now, "HOST")["projects"][0]
+
+    assert project["stage_history"][0] == {
+        "stage": "building",
+        "at": (now - timedelta(days=40)).isoformat(),
+        "inferred": True,
+    }
+    assert len(project["stage_history"]) == 2
+    assert project["first_commit"] == (now - timedelta(days=40)).isoformat()
+    # Nothing was written: the payload is derived, and the store is untouched.
+    assert store_file.read_bytes() == before
+    assert "inferred" not in store_file.read_text(encoding="utf-8")
+
+
+def test_inferred_entry_carries_the_current_stage_with_no_history() -> None:
+    """Catches an empty trail producing no entry, or the wrong stage in it."""
+    now = datetime(2026, 10, 20, 12, 0)
+    row = wipboard.Row(
+        name="alpha", stage="testing", note="", last_commit=now,
+        has_git=True, first_commit=now - timedelta(days=20),
+    )
+
+    project = wipboard.board_payload([row], now, "HOST")["projects"][0]
+
+    assert project["stage_history"] == [
+        {"stage": "testing", "at": (now - timedelta(days=20)).isoformat(), "inferred": True}
+    ]
+
+
+def test_payload_version_is_three() -> None:
+    """Catches the CLI shipping v3 fields under a version the Worker refuses."""
+    assert wipboard.PAYLOAD_VERSION == 3
+
+
+def test_recent_can_carry_more_than_five_commits(tmp_path: Path) -> None:
+    """Catches the log call going back to -5, which truncates the project page."""
+    repo = tmp_path / "r"
+    base = datetime(2026, 1, 1, 12, 0)
+    make_repo(repo, when=base, message="c0")
+    for i in range(1, 8):
+        commit(repo, base + timedelta(hours=i), message=f"c{i}")
+
+    info = wipboard.git_info(repo)
+
+    assert len(info["recent"]) == 8
+    assert info["recent"][0]["subject"] == "c7"

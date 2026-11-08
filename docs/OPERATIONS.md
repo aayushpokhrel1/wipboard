@@ -11,7 +11,7 @@ wipboard                      # then this works anywhere
 ## Verify
 
 ```bash
-python -m pytest              # 54 tests, the whole suite
+python -m pytest              # 63 tests, the whole suite
 ```
 
 **pytest is required.** `python test_wipboard.py` runs nothing and exits 0, because the tests

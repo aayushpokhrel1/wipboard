@@ -17,7 +17,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 STAGES = ("idea", "spec", "building", "testing", "shipped", "parked")
@@ -84,6 +84,14 @@ class Row:
     uncommitted: list[str] = field(default_factory=list)  # changed paths, already capped at 8
     next_items: list[str] = field(default_factory=list)
     next_source: str = ""
+    # Commit counts per 7-day bucket, oldest first, always WEEK_BUCKETS long.
+    # Trimmed to the project's own life in board_payload, never here: a fixed
+    # length is what makes a multi-repo project a plain element-wise sum.
+    weeks: list[int] = field(default_factory=list)
+    first_commit: datetime | None = None
+    # The one thing git cannot tell us, and so the one thing stored. Appended
+    # by cmd_set, never rewritten.
+    stage_history: list[dict] = field(default_factory=list)
 
 
 def store_path() -> Path:
@@ -154,16 +162,90 @@ def _parse_commit_time(raw: str) -> datetime | None:
     return parsed
 
 
-def git_info(repo: Path) -> dict | None:
+# The chart's window, in 7-day buckets. Fixed here and trimmed to the project's
+# own life in board_payload: a fixed-length array is what lets a multi-repo
+# project's weeks be a plain element-wise sum.
+WEEK_BUCKETS = 26
+WEEK_DAYS = 7
+# The floor the trimmed span is clamped to. A three-week-old project otherwise
+# gets three enormously fat bars.
+WEEK_MIN_BUCKETS = 8
+
+# How many commits `recent` carries. The board shows a handful and the project
+# page puts the rest behind a drawer; one field rather than two, so there is
+# only one cap to keep in step.
+RECENT_MAX = 20
+
+
+def _week_buckets(repo: Path, now: datetime) -> list[int]:
+    """Commit counts per 7-day bucket, oldest first, always WEEK_BUCKETS long.
+
+    Buckets are measured back from `now`, not calendar weeks: calendar weeks
+    drag in timezone and ISO-week-numbering questions that buy nothing here.
+    Bucket 25 is the last 7 days; bucket 0 is 182 to 175 days ago. A commit
+    older than the window falls in no bucket and is not counted.
+
+    HEAD only, no --all. last_commit, subject and recent are all HEAD-based, and
+    a chart counting other branches would disagree with the "commit 5d" on the
+    same card for reasons the reader cannot see.
+    """
+    weeks = [0] * WEEK_BUCKETS
+    since = now - timedelta(days=WEEK_BUCKETS * WEEK_DAYS)
+    # One call, bucketed in Python. A git process per bucket would be 26 spawns
+    # per repo per run.
+    raw = _git(repo, "log", f"--since={since.isoformat()}", "--format=%cI")
+    if not raw:
+        return weeks
+    for line in raw.splitlines():
+        stamp = _parse_commit_time(line.strip())
+        if stamp is None:
+            continue
+        age = (now - stamp).total_seconds()
+        if age < 0:
+            # A commit dated in the future (clock skew, a rebase) is the most
+            # recent thing there is, so it lands in the newest bucket rather
+            # than in none.
+            weeks[-1] += 1
+            continue
+        # Bucket 25 is the most recent 7 days, so the index counts back from the
+        # end. A commit exactly 7 days old is in bucket 24, not 25.
+        index = WEEK_BUCKETS - 1 - int(age // (WEEK_DAYS * 86400))
+        if 0 <= index < WEEK_BUCKETS:
+            weeks[index] += 1
+    return weeks
+
+
+def _first_commit(repo: Path) -> datetime | None:
+    """The earliest root commit's time, or None when the repo has no commits.
+
+    rev-list --max-parents=0, not `git log --reverse`, which walks the whole
+    history to answer. A repository may report several root commits (merged
+    histories), so the earliest wins.
+    """
+    raw = _git(repo, "rev-list", "--max-parents=0", "--format=%cI", "HEAD")
+    if not raw:
+        return None
+    times = [
+        parsed
+        for parsed in (_parse_commit_time(line.strip()) for line in raw.splitlines())
+        if parsed is not None
+    ]
+    return min(times) if times else None
+
+
+def git_info(repo: Path, now: datetime | None = None) -> dict | None:
     """Derived git state for repo, or None when the folder is not a usable repo."""
     if not (repo / ".git").exists():
         return None
+    # One instant for the whole board, passed down from build_rows, so every
+    # project is bucketed against the same clock reading.
+    now = now or utc_now()
     # One log call, not two: the subject rides along on the same invocation
     # because twenty repos times an extra process spawn is paid on every run.
     # %x1f and %x1e, not %n: a commit subject can contain newlines, so only
     # control characters that cannot appear in a subject can separate records
     # and fields.
-    raw = _git(repo, "log", "-5", "--format=%cI%x1f%s%x1e")
+    raw = _git(repo, "log", f"-{RECENT_MAX}", "--format=%cI%x1f%s%x1e")
     if raw is None:
         return None
     # An empty subject yields one field, not two, so the second part defaults.
@@ -180,7 +262,7 @@ def git_info(repo: Path) -> dict | None:
     if last_commit is None:
         return None
     recent: list[dict] = []
-    for record in records[:5]:
+    for record in records[:RECENT_MAX]:
         record_stamp, _, record_subject = record.partition("\x1f")
         record_time = _parse_commit_time(record_stamp)
         # A later record that will not parse is skipped, not fatal: the first
@@ -226,6 +308,8 @@ def git_info(repo: Path) -> dict | None:
         "changed": changed,
         "recent": recent,
         "paths": paths,
+        "weeks": _week_buckets(repo, now),
+        "first_commit": _first_commit(repo),
     }
 
 
@@ -240,11 +324,11 @@ def git_info(repo: Path) -> dict | None:
 # The paths prefix is correctness, not decoration. A path "src/app.ts" inside the
 # child "budgerr-app" is shown under the parent project, so it must read
 # "budgerr-app/src/app.ts" to resolve from there. Do not remove the prefix.
-def project_git_info(folder: Path) -> dict | None:
+def project_git_info(folder: Path, now: datetime | None = None) -> dict | None:
     """git_info for folder, or the merge of its immediate child repositories."""
     # The common path, and it must stay byte-identical to git_info's answer.
     if (folder / ".git").exists():
-        return git_info(folder)
+        return git_info(folder, now)
     # An unreadable folder degrades to "no git" rather than raising, the same
     # way every git call in this module does.
     try:
@@ -257,7 +341,7 @@ def project_git_info(folder: Path) -> dict | None:
         # so a .venv or .git directory never costs a process spawn.
         if child.name.startswith("."):
             continue
-        info = git_info(child)
+        info = git_info(child, now)
         if info is None:
             continue
         infos.append((child.name, info))
@@ -274,6 +358,11 @@ def project_git_info(folder: Path) -> dict | None:
     # A forward slash literal, not os.sep: these strings are displayed and
     # pushed as JSON, never opened, so they must read the same on every platform.
     paths = [f"{name}/{path}" for name, info in infos for path in info["paths"]]
+    # Every child's weeks is WEEK_BUCKETS long and bucketed against the same
+    # instant, so the merge is a plain element-wise sum. A merged project's
+    # chart is the whole project's activity, which is the point of merging it.
+    weeks = [sum(counts) for counts in zip(*(info["weeks"] for _, info in infos))]
+    firsts = [info["first_commit"] for _, info in infos if info["first_commit"] is not None]
     return {
         "last_commit": newest["last_commit"],
         "branch": newest["branch"],
@@ -281,8 +370,10 @@ def project_git_info(folder: Path) -> dict | None:
         "ahead": sum(info["ahead"] for _, info in infos),
         "subject": newest["subject"],
         "changed": sum(info["changed"] for _, info in infos),
-        "recent": recent[:5],
+        "recent": recent[:RECENT_MAX],
         "paths": paths[:8],
+        "weeks": weeks,
+        "first_commit": min(firsts) if firsts else None,
     }
 
 
@@ -492,6 +583,29 @@ def _parse_stage_set_at(raw: object) -> datetime | None:
     return parsed
 
 
+def _stage_history(entry: dict) -> list[dict]:
+    """The stored stage trail, as a list of {"stage", "at"} dicts.
+
+    The store is hand-editable, so anything that is not a list of objects with a
+    stage and a parseable timestamp is dropped rather than crashing the board.
+    A project with no stage_history is normal, not broken: it is every project
+    that existed before the trail did.
+    """
+    raw = entry.get("stage_history")
+    if not isinstance(raw, list):
+        return []
+    history: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        stage = item.get("stage")
+        at = item.get("at")
+        if not isinstance(stage, str) or not isinstance(at, str):
+            continue
+        history.append({"stage": stage, "at": at})
+    return history
+
+
 def _find_project_dir(name: str, roots: list[str]) -> Path | None:
     """Reconstruct a project's path by searching each root. First match wins."""
     for root in roots:
@@ -562,7 +676,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
         stage_set_at = _parse_stage_set_at(entry.get("stage_set_at"))
         folder = _find_project_dir(name, roots)
         missing = folder is None
-        info = project_git_info(folder) if folder is not None else None
+        info = project_git_info(folder, now) if folder is not None else None
         has_git = info is not None
         # A missing project has no folder to read, so it answers nothing rather
         # than being asked.
@@ -583,6 +697,9 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
                 uncommitted=info["paths"] if info else [],
                 next_items=next_items,
                 next_source=next_source,
+                weeks=info["weeks"] if info else [],
+                first_commit=info["first_commit"] if info else None,
+                stage_history=_stage_history(entry),
             )
         )
 
@@ -596,7 +713,7 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
             if child.name.startswith(".") or child.name.startswith("__"):
                 continue
             seen.add(child.name)
-            info = project_git_info(child)
+            info = project_git_info(child, now)
             has_git = info is not None
             next_items, next_source = project_next(child)
             rows.append(
@@ -614,6 +731,8 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
                     uncommitted=info["paths"] if info else [],
                     next_items=next_items,
                     next_source=next_source,
+                    weeks=info["weeks"] if info else [],
+                    first_commit=info["first_commit"] if info else None,
                 )
             )
 
@@ -624,7 +743,56 @@ def build_rows(store: dict, now: datetime) -> list[Row]:
 # The payload shape is owned here, not in the Worker: the Worker stores and
 # renders whatever it is given. Bump this when the shape changes, and redeploy
 # the Worker first, or it will refuse a version it does not know.
-PAYLOAD_VERSION = 2
+PAYLOAD_VERSION = 3
+
+
+def _trim_weeks(weeks: list[int], first_commit: datetime | None, now: datetime) -> list[int]:
+    """The chart's span: the project's own life, floored at WEEK_MIN_BUCKETS.
+
+    A fixed 26-week axis would draw most pages as a long flat run of nothing,
+    which reads as "dead" when the truth is "did not exist yet". So the leading
+    buckets that end before the first commit are dropped, and the result is
+    floored at 8 so a three-week-old project does not get three fat bars. The
+    cap of 26 is already the array length.
+    """
+    kept = list(weeks)
+    if first_commit is not None:
+        # Bucket i covers [now - (26 - i) * 7d, now - (25 - i) * 7d). Keep from
+        # the bucket containing the first commit onwards, which is the first
+        # bucket whose end is after it.
+        age_days = (now - first_commit).total_seconds() / 86400
+        start = WEEK_BUCKETS - 1 - int(age_days // WEEK_DAYS)
+        start = max(0, min(WEEK_BUCKETS - 1, start))
+        kept = kept[start:]
+    # From the full array, not from `kept`. Slicing the already-trimmed list
+    # takes the last 8 of however few survived, which is those same few: a
+    # ten-day-old project kept two buckets and the floor left it at two.
+    if len(kept) < WEEK_MIN_BUCKETS:
+        kept = list(weeks)[-WEEK_MIN_BUCKETS:]
+    return kept
+
+
+def _inferred_entry(row: Row) -> dict | None:
+    """The stage the project must have been in before its first recorded change.
+
+    Derived at payload time and never stored: a repository's first commit is
+    something git can tell us, and the storage rule forbids keeping what git can
+    answer. It is marked `inferred` because presenting a guess as a record is
+    the failure this whole tool exists to prevent.
+    """
+    if row.first_commit is None:
+        return None
+    first = row.stage_history[0] if row.stage_history else None
+    if first is not None:
+        first_at = _parse_stage_set_at(first.get("at"))
+        # A recorded change at or before the first commit leaves nothing to
+        # infer: the trail already starts where the project does.
+        if first_at is not None and first_at <= row.first_commit:
+            return None
+        stage = first.get("stage", row.stage)
+    else:
+        stage = row.stage
+    return {"stage": stage, "at": row.first_commit.isoformat(), "inferred": True}
 
 
 def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
@@ -637,6 +805,25 @@ def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
 
     def stamp(value: datetime | None) -> str | None:
         return value.isoformat() if value is not None else None
+
+    def history(row: Row) -> list[dict]:
+        """The stored trail, with the inferred first entry prepended.
+
+        The inferred entry is built here and never written back to the store.
+        """
+        entries = [dict(entry) for entry in row.stage_history]
+        inferred = _inferred_entry(row)
+        return [inferred, *entries] if inferred is not None else entries
+
+    def weeks(row: Row) -> list[int]:
+        return _trim_weeks(row.weeks, row.first_commit, generated_at)
+
+    def week_start(row: Row) -> str | None:
+        """The oldest kept bucket's start, so the Worker can label the axis."""
+        kept = weeks(row)
+        if not kept:
+            return None
+        return (generated_at - timedelta(days=len(kept) * WEEK_DAYS)).isoformat()
 
     return {
         "version": PAYLOAD_VERSION,
@@ -662,6 +849,12 @@ def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
                 ],
                 "uncommitted": [path[:120] for path in row.uncommitted],
                 "next": {"items": list(row.next_items), "source": row.next_source},
+                # Version 3, additive. weeks is the trimmed span, so week_start
+                # is the oldest kept bucket's start rather than a fixed window.
+                "stage_history": history(row),
+                "first_commit": stamp(row.first_commit),
+                "weeks": weeks(row),
+                "week_start": week_start(row),
             }
             for row in rows
         ],
@@ -869,6 +1062,14 @@ def cmd_set(store: dict, project: str, stage: str, note: str | None) -> int:
     entry = projects[project] or {}
     entry["stage"] = stage
     entry["stage_set_at"] = utc_now().isoformat()
+    # The stage trail is the one thing stored, because it is the one thing git
+    # cannot tell us. Append only: an earlier entry is a record of what was
+    # true then, and rewriting it would make the trail a guess too.
+    trail = entry.get("stage_history")
+    if not isinstance(trail, list):
+        trail = []
+    trail.append({"stage": stage, "at": entry["stage_set_at"]})
+    entry["stage_history"] = trail
     if note is not None:
         entry["note"] = note
     projects[project] = entry
