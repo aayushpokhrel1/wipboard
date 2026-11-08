@@ -363,7 +363,11 @@ def test_board_payload_shape():
         # none. Empty weeks is what tells the page to draw no chart at all, so
         # inventing buckets here would put an all-zero chart on every project
         # that has no git, which is the opposite of the intended degradation.
-        "stage_history": [], "first_commit": None,
+        # stage_set_at stands in for the trail on a project that predates
+        # it, so a board built before 2026-11-08 still draws one honest
+        # segment rather than none.
+        "stage_history": [{"stage": "building", "at": "2026-10-01T09:00:00"}],
+        "first_commit": None,
         "weeks": [], "week_start": None,
     }
     assert p["projects"][1]["last_commit"] is None
@@ -1175,6 +1179,45 @@ def test_inferred_entry_carries_the_current_stage_with_no_history() -> None:
     assert project["stage_history"] == [
         {"stage": "testing", "at": (now - timedelta(days=20)).isoformat(), "inferred": True}
     ]
+
+
+def test_stage_set_at_seeds_the_trail_when_there_is_no_history() -> None:
+    """Catches the band claiming the current stage has held since the first commit.
+
+    Every project that existed before the trail did has a stage_set_at and an
+    empty stage_history. Ignoring it put "building since 61 weeks ago" in the
+    band under a card reading "36d in stage".
+    """
+    now = datetime(2026, 10, 20, 12, 0)
+    set_at = now - timedelta(days=36)
+    row = wipboard.Row(
+        name="alpha", stage="building", note="", last_commit=now,
+        has_git=True, first_commit=now - timedelta(days=400),
+        stage_set_at=set_at,
+    )
+
+    trail = wipboard.board_payload([row], now, "HOST")["projects"][0]["stage_history"]
+
+    assert trail == [
+        {"stage": "building", "at": (now - timedelta(days=400)).isoformat(), "inferred": True},
+        {"stage": "building", "at": set_at.isoformat()},
+    ]
+
+
+def test_a_recorded_trail_wins_over_stage_set_at() -> None:
+    """Catches the seed being prepended to a real trail instead of standing in for it."""
+    now = datetime(2026, 10, 20, 12, 0)
+    row = wipboard.Row(
+        name="alpha", stage="shipped", note="", last_commit=now,
+        has_git=True, first_commit=now - timedelta(days=40),
+        stage_set_at=now - timedelta(days=1),
+        stage_history=[{"stage": "building", "at": (now - timedelta(days=10)).isoformat()}],
+    )
+
+    trail = wipboard.board_payload([row], now, "HOST")["projects"][0]["stage_history"]
+
+    assert [e["stage"] for e in trail] == ["building", "building"]
+    assert trail[0]["inferred"] is True
 
 
 def test_payload_version_is_three() -> None:

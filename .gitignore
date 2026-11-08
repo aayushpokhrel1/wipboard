@@ -9,7 +9,7 @@ build/
 graphify-out/
 brief.md
 review.diff
-worker/node_modules/
+node_modules/
 worker/.wrangler/
 worker/worker-configuration.d.ts
 worker/.dev.vars

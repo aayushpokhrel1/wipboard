@@ -229,6 +229,40 @@ describe("renderProject history", () => {
     expect(html).toContain("28 commits over 10 weeks");
   });
 
+  it("drops the label from a segment too narrow to hold it, keeping a title", () => {
+    // A stage set minutes ago is a sliver of a ten-week span, and its label
+    // used to clip to one or two stray glyphs at the band's right edge.
+    const html = renderProject(
+      board(),
+      project({
+        weeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        week_start: "2026-08-11T12:00:00",
+        first_commit: "2026-08-11T12:00:00",
+        stage_history: [
+          { stage: "idea", at: "2026-08-11T12:00:00", inferred: true },
+          { stage: "building", at: "2026-10-20T11:30:00" },
+        ],
+      }),
+      NOW,
+    );
+    // The list below the band carries every entry's label, so the slice has to
+    // stop where the band does or it counts those too.
+    const band = html.slice(html.indexOf('class="hist-band"'), html.indexOf('class="hist-list'));
+    expect(band.match(/class="hist-seg/g)?.length).toBe(2);
+    // The wide one keeps its label; the sliver carries a title instead.
+    expect(band.match(/class="hist-stage"/g)?.length).toBe(1);
+    expect(band).toContain('title="building, ');
+  });
+
+  it("labels the left end of the scale with a date, not a duration", () => {
+    // It sits opposite "now", so an instant belongs there. A duration there
+    // read as a second, disagreeing copy of the segment's own length.
+    const html = renderProject(board(), full(), NOW);
+    const scale = html.slice(html.indexOf('class="hist-scale"'));
+    expect(scale.slice(0, 200)).not.toContain("weeks");
+    expect(scale).toContain("11 Aug");
+  });
+
   it("renders the stage trail but no chart for a project with no git", () => {
     // For these projects the hand-set stage is the only history that will ever
     // exist, so the section must survive without a chart, and the trail prints

@@ -72,7 +72,7 @@ file. "Update the docs" means sweep all of them.
   re-reads this list.
 - **git failures are normal, not errors.** Three of the folders this was built against have
   no git at all. Every git call degrades to "no git" rather than raising.
-- **Verify with `python -m pytest`** (63 tests) and `npm --prefix worker test` (41, plus
+- **Verify with `python -m pytest`** (65 tests) and `npm --prefix worker test` (43, plus
   `tsc`). pytest is required; running the test file directly executes nothing and exits 0. The
   drift and sort logic is the only non-trivial code here and it has to stay covered: the `!`
   flag is the entire value proposition, so a test that goes red when it breaks is worth more

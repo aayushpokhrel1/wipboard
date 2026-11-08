@@ -772,7 +772,24 @@ def _trim_weeks(weeks: list[int], first_commit: datetime | None, now: datetime) 
     return kept
 
 
-def _inferred_entry(row: Row) -> dict | None:
+def _recorded_trail(row: Row) -> list[dict]:
+    """The recorded stage changes, newest form and old form together.
+
+    `stage_set_at` is a recorded stage change: it is when the current stage was
+    set, stored in the single-field form that predates the trail. Every project
+    that existed before 2026-11-08 has one and an empty trail, so without this
+    seed their band would claim the current stage has held since the first
+    commit while the card above it said "36d in stage". A page that contradicts
+    itself is the staleness this tool exists to prevent.
+    """
+    if row.stage_history:
+        return [dict(entry) for entry in row.stage_history]
+    if row.stage_set_at is None:
+        return []
+    return [{"stage": row.stage, "at": row.stage_set_at.isoformat()}]
+
+
+def _inferred_entry(row: Row, trail: list[dict]) -> dict | None:
     """The stage the project must have been in before its first recorded change.
 
     Derived at payload time and never stored: a repository's first commit is
@@ -782,7 +799,7 @@ def _inferred_entry(row: Row) -> dict | None:
     """
     if row.first_commit is None:
         return None
-    first = row.stage_history[0] if row.stage_history else None
+    first = trail[0] if trail else None
     if first is not None:
         first_at = _parse_stage_set_at(first.get("at"))
         # A recorded change at or before the first commit leaves nothing to
@@ -811,8 +828,8 @@ def board_payload(rows: list[Row], generated_at: datetime, host: str) -> dict:
 
         The inferred entry is built here and never written back to the store.
         """
-        entries = [dict(entry) for entry in row.stage_history]
-        inferred = _inferred_entry(row)
+        entries = _recorded_trail(row)
+        inferred = _inferred_entry(row, entries)
         return [inferred, *entries] if inferred is not None else entries
 
     def weeks(row: Row) -> list[int]:

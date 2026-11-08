@@ -1088,11 +1088,22 @@ function renderHistory(project: Project, now: number): string {
           const right = Math.min(100, Math.max(left, ((nextAt - spanStart) / span) * 100));
           const duration = spanWords(Math.max(0, nextAt - at));
           const mark = entry.inferred ? "*" : "";
+          // A segment narrower than its own label printed one or two clipped
+          // glyphs at the band's edge: a stage set an hour ago is a sliver of a
+          // 17-week span, and "BUILDING / 1h" came out as "B / 0". The block
+          // still shows when the change happened, and the card above the chart
+          // already names the current stage and how long it has held, so the
+          // label is what gives way rather than the segment.
+          const labelled = right - left >= 12;
+          const label = labelled
+            ? `<span class="hist-stage">${escapeHtml(entry.stage)}${mark}</span>
+          <span class="hist-for">${escapeHtml(duration)}</span>`
+            : "";
+          const title = `${entry.stage}${mark}, ${duration}`;
           return `<span class="hist-seg${entry.inferred ? " inferred" : ""}" style="--l:${left.toFixed(
             2,
-          )}%;--w:${(right - left).toFixed(2)}%">
-          <span class="hist-stage">${escapeHtml(entry.stage)}${mark}</span>
-          <span class="hist-for">${escapeHtml(duration)}</span>
+          )}%;--w:${(right - left).toFixed(2)}%"${labelled ? "" : ` title="${escapeHtml(title)}"`}>
+          ${label}
         </span>`;
         })
         .join("")
@@ -1125,9 +1136,13 @@ function renderHistory(project: Project, now: number): string {
 
   // The scale line is the chart's text twin, and the reason the chart can be
   // role="img" with one label instead of 26 labelled bars.
+  // The left end is the date the axis starts, not its length. It sits opposite
+  // "now", so an instant belongs there; a duration there put "18 weeks" a line
+  // above a segment labelled "17 weeks", two numbers in the same unit that are
+  // not the same measurement.
   const scale = charted
     ? `<p class="hist-scale">
-      <span>${escapeHtml(spanText)}</span>
+      <span>${escapeHtml(shortDate(spanStart, now))}</span>
       <span>${escapeHtml(`${total} ${total === 1 ? "commit" : "commits"}`)}</span>
       <span>now</span>
     </p>`
