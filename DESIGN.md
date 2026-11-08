@@ -561,9 +561,42 @@ no radius).
 
 One card at full width (`max-width: 46rem`, 6px rail, name at 1.5rem), then the blocks the board
 has no room for, open rather than behind a drawer, because that is why the reader came here:
-`next` with its provenance line, `recent` uncapped, and `uncommitted` paths. Block headings are
+`next` with its provenance line, `history`, `recent`, and `uncommitted` paths. Block headings are
 `dim` micro over a `line` hairline. The card's head row reuses the number slot for the branch
-name. Nothing here is capped.
+name.
+
+`recent` shows **five openly and the rest behind a drawer**, up to the twenty the payload
+carries. It was uncapped and fully open until 2026-11-08, which buried every block under it;
+burying all twenty instead would have taken away the thing this page is for. The handful plus
+the depth is the compromise, and it is the same `<details>` mechanism as the board's drawer.
+
+### The History Section
+
+A full-width block on the project page, and the answer to "have I actually worked on this, and
+how long has it sat here". Three parts stacked on one axis, and the axis spans **the project's
+own life**, not a fixed window: a fixed 26-week axis drew most pages as a long flat run of
+nothing, which reads as *dead* when the truth is *did not exist yet*. Trimmed to start at the
+first commit, floored at 8 buckets so a three-week-old project does not get three fat bars, and
+capped at 26.
+
+- **The chart.** One bar per 7-day bucket, oldest first, `accent`, scaled to the project's own
+  peak. The block is one `role="img"` with a label stating the total and the span, not 26
+  labelled bars, so a screen reader gets a sentence rather than a wall of numbers. The axis is
+  `.hist-chart`'s own `line` border-bottom, which is why a zero week's 1px rule does not have
+  to be legible by itself. **Non-zero buckets floor at 3px**: bars scale against the project's
+  own peak, so one commit beside a week of forty clamps to nothing, and a week with work
+  drawing the same height as a week without is the one misreading this chart exists to prevent.
+- **The band.** The stage trail on the same axis, each segment positioned and sized from its
+  own dates. `chip` with a `line` border, **never `hot`**: the alarm colour means suspect
+  everywhere on this page and a stage change is not an alarm. An inferred segment is dashed and
+  marked with an asterisk carried by a footnote, never by colour alone. A segment narrower than
+  its own label drops the label and keeps a `title`, because a sliver printed one or two
+  clipped glyphs at the band's edge. Below phone width the band is replaced by the list, since
+  there is no room for an axis the labels can share.
+- **The scale.** Three `dim` micro marks: the start **date**, the commit total, and `now`. The
+  left end is an instant because it sits opposite `now`; a duration there put "18 weeks" a line
+  above a segment labelled "17 weeks", two numbers in the same unit that measured different
+  things.
 
 ## Do's and Don'ts
 

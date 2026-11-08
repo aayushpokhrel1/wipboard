@@ -11,7 +11,7 @@ wipboard                      # then this works anywhere
 ## Verify
 
 ```bash
-python -m pytest              # 65 tests, the whole suite
+python -m pytest              # 66 tests, the whole suite
 ```
 
 **pytest is required.** `python test_wipboard.py` runs nothing and exits 0, because the tests
@@ -192,10 +192,13 @@ which rejects curl's flags with a misleading "Missing an argument for parameter
 That should be a `302` to a login, not a `200`. And `wipboard push` must still succeed: it is
 the Bypass policy on `api/board` that keeps it working.
 
-Verified on 2026-10-26: `GET /` returns 302, `POST /api/board` without a token returns 401
-from the Worker rather than a login redirect, and `wipboard.aayus-pok.workers.dev` returns
-404, so `workers_dev: false` is holding. Re-verified on 2026-11-07 after deploying
-`3753ab2e`.
+Last verified on 2026-11-08, after the Service Auth swap below and the move to access mode:
+`GET /` returns 302 to the login, `POST /api/board` with no service token returns **403**
+(Access rejects it at the edge, so the Worker never runs; it was 401 from the Worker while
+`api/board` was on a Bypass policy), a real `wipboard push` succeeds, and
+`wipboard.aayus-pok.workers.dev` returns 404 on every path, so `workers_dev: false` is
+holding. **That last one is what access mode rests on**, so re-check it whenever routes or
+`workers_dev` change.
 
 #### Tightening `api/board` from Bypass to Service Auth
 

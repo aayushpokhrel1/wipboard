@@ -748,6 +748,42 @@ def test_documented_test_counts_match_reality() -> None:
     )
 
 
+def test_design_doc_numbers_match_the_stylesheet() -> None:
+    """Catches DESIGN.md describing a visual system the code stopped having.
+
+    DESIGN.md exists because the Worker's whole design system is one inline
+    STYLE constant that is too easy to extend inconsistently. That only works
+    while the document is true. The numbers it quotes live in two places by
+    necessity (the rule at the code, the system in the doc), and two copies of
+    a number drift. These are the ones a reader would act on.
+
+    If it fails, decide which is right and change the other. Do not change the
+    number here.
+    """
+    import re
+
+    root = Path(__file__).resolve().parent
+    design = (root / "DESIGN.md").read_text(encoding="utf-8")
+    css = (root / "worker" / "src" / "render.ts").read_text(encoding="utf-8")
+
+    # The floor that keeps a week with work taller than a week without.
+    stated = re.search(r"[Nn]on-zero buckets floor at \**(\d+)px", design)
+    assert stated, "DESIGN.md no longer states the non-zero bar floor"
+    actual = re.search(r"\.hist-bar \{[^}]*min-height:\s*(\d+)px", css, re.S)
+    assert actual, "the .hist-bar rule no longer sets a min-height"
+    assert stated.group(1) == actual.group(1), (
+        f"DESIGN.md says the bar floor is {stated.group(1)}px, the stylesheet sets {actual.group(1)}px"
+    )
+
+    # The chart's span, which the CLI trims to and the doc describes.
+    assert f"capped at {wipboard.WEEK_BUCKETS}" in design, (
+        "DESIGN.md's stated cap no longer matches wipboard.WEEK_BUCKETS"
+    )
+    assert f"floored at {wipboard.WEEK_MIN_BUCKETS} buckets" in design, (
+        "DESIGN.md's stated floor no longer matches wipboard.WEEK_MIN_BUCKETS"
+    )
+
+
 def test_handover_stays_a_current_state_note() -> None:
     """Catches HANDOVER.md turning from a current-state note into a log.
 

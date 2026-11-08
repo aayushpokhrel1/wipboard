@@ -121,7 +121,7 @@ revisit.
 
 - `docs/board.svg`: real output from throwaway repos, not a mockup. Regenerated with
   `python scripts/demo_board.py | python scripts/board_svg.py`.
-- A live deployment at `https://wipboard.enamelvault.com`, token mode behind Cloudflare Access.
+- A live deployment at `https://wipboard.enamelvault.com`, access mode behind Cloudflare Access.
 - A covered test suite for both the CLI and the Worker. The counts live in
   `docs/OPERATIONS.md`, where a test recounts them; they are deliberately not repeated here,
   because a number in a second document rots silently.
@@ -160,6 +160,14 @@ entire value of the page.
 - **The store lives at user level**, `~/.config/wipboard/projects.json`, not in any repo.
   A tool must not write into its own install directory, and the board spans repos.
 - **The roots list lives in the store**, so there is no separate config file to go stale.
+- **Per-project history, once the question existed.** This sat under "Deferred, and why"
+  with its own release condition written into it: *add when someone asks "how long does a
+  project sit in testing"*. On 2026-11-08 the author asked exactly that, so it was built.
+  The constraint that kept it deferred still holds and shaped the design: one KV key,
+  overwritten every push, accumulates nothing. So the weekly commit chart and the first
+  commit are derived from `git log` on every run, and the only thing stored is an appended
+  `{stage, at}` trail, because a stage change is the one fact git cannot tell us. The segment
+  before the first recorded change is inferred at push time and drawn marked as inferred.
 - **Nothing runs in the background.** An early design stamped activity into the store from a
   git `post-commit` hook. That was deleted before it was built: reading `git log` at display
   time gives the same answer with no hook, no write contention, and no possibility of drift.
@@ -177,9 +185,6 @@ entire value of the page.
   machine's repos, so the page is a snapshot and can be stale, which is the one property the
   CLI was built to eliminate. The design's answer is that the page states its own age. See
   `docs/superpowers/specs/2026-10-20-live-dashboard-design.md`.
-- **Per-project history and trend data.** Appealing and useless until there is a question it
-  answers. Add when someone asks "how long does a project sit in testing". Every push
-  overwrites the single KV key, so the dashboard did not sneak history in.
 - **A second machine writing to the board.** One key, one writer. The payload already carries
   `host`, so a per-host key and a merged view is an additive change, but nothing is built for
   it until a second machine exists.

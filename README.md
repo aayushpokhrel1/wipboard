@@ -68,6 +68,10 @@ Cloudflare Worker that gives you the same board as a web page:
 wipboard push          # sends the current board to your Worker
 ```
 
+Tapping a project opens its own page: what is next, the recent commits with the older ones
+behind a drawer, any uncommitted paths, and a history section with a weekly commit chart
+spanning the project's own life and the trail of its stage changes.
+
 Push from your `post-commit` hook and it updates on every commit in any repo. Deployment,
 the token, and access control are in [docs/OPERATIONS.md](docs/OPERATIONS.md). Nothing in the
 CLI needs it, and nothing is sent anywhere until you configure an endpoint.
