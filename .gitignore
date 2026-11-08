@@ -1,4 +1,7 @@
+# Session handover (local-only, this machine): current state only, nothing durable.
+# The budget test in test_wipboard.py fails if it starts accumulating.
 HANDOVER.md
+
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -6,7 +9,10 @@ dist/
 build/
 *.egg-info/
 .venv/
+
+# Knowledge graph cache (rebuilt by the graphify post-commit hook)
 graphify-out/
+
 brief.md
 review.diff
 node_modules/

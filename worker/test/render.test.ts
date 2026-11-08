@@ -424,6 +424,16 @@ describe("the stylesheet", () => {
     expect(css).toMatch(/\.name a\s*\{[^}]*padding-block:/);
   });
 
+  // Found by measuring the live page at 375px on 2026-11-08, not by reading
+  // it: "back to the board" was a 13px strip and the drawer's summary 21px,
+  // both under WCAG 2.5.8's 24. The back link is the only way off a project
+  // page on a phone, which is the device this board exists to be read on.
+  it("gives the back link and the drawer summary a 24px tap target", () => {
+    const css = renderEmpty().match(/<style>([\s\S]*?)<\/style>/)![1];
+    expect(css).toMatch(/\.back a\s*\{[^}]*min-height:\s*24px/);
+    expect(css).toMatch(/\.drawer > summary\s*\{[^}]*min-height:\s*24px/);
+  });
+
   // The HISTORY rules are CSS-only facts: no markup assertion can see a bar
   // that lost its height, a zero bucket that stopped being a rule, or a band
   // that stopped collapsing on a phone. Each of these is the rule that carries

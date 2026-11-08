@@ -651,7 +651,13 @@ body {
    survives with the summary visible if the element is ever unstyled. */
 .drawer { margin: .5rem 0 0; border-top: 1px solid var(--line); }
 .drawer > summary {
-  padding: .4rem 0 .1rem;
+  /* Tall enough to hit with a thumb. WCAG 2.2 target size (2.5.8) wants 24px
+     and this was 21px; the spacing exception technically covered it, since
+     nothing sits near it, but a 21px strip is still a miss on a real phone,
+     which is the device this board is read on. */
+  padding: .55rem 0 .3rem;
+  min-height: 24px;
+  box-sizing: content-box;
   cursor: pointer;
   list-style: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -743,6 +749,11 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
    no room for, open rather than behind a drawer, because that is why a reader
    came here. */
 .back { margin: 1rem 1.1rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .66rem; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+/* The only way back on a phone, and it was a 13px-tall strip of text: the
+   smallest target on the page sitting on the most-used control. The padding
+   brings it to 24px without changing where the line sits, because the negative
+   margin gives back what the padding takes. */
+.back a { display: inline-block; min-height: 24px; box-sizing: border-box; padding-block: .35rem; margin-block: -.35rem; }
 .single { max-width: 46rem; margin: .7rem 1.1rem 0; }
 .single .cell { border-left-width: 6px; }
 .single .frame { padding: .9rem 1rem .7rem; }
